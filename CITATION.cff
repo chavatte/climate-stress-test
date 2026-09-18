@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this model, please cite the software release."
+title: "Climate Stress Test — Brazil 2026–2030"
+version: "2.0"
+type: software
+authors:
+  - family-names: Chavatte
+    given-names: João Carlos
+    affiliation: "Independent Researcher"
+date-released: 2026-09-16
+abstract: >
+  Exploratory Agent-Based Model implemented in NetLogo to investigate
+  systemic vulnerability and cascading interactions among synthetic
+  municipalities under interacting climate, environmental, infrastructural,
+  socioeconomic, and network-related stressors. The model is a stress-testing
+  framework rather than an official climate forecast.
+keywords:
+  - agent-based modeling
+  - NetLogo
+  - climate risk
+  - systemic risk
+  - stress testing
+  - cascading failures
+  - complex networks
+  - resilience
+  - adaptation
+  - reproducibility
+license: MIT
+repository-code: "https://github.com/chavatte/climate-stress-test"
+url: "https://chavatte.vercel.app/projects/climate-stress-test"
