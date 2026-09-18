@@ -33,10 +33,10 @@ _____________|','   ///_/-------------/   |                 \_/_________________
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22836683.svg)](https://doi.org/10.5281/zenodo.22836683)  
 [![NetLogo](https://img.shields.io/badge/NetLogo-7.x-4E9F3D.svg)](https://ccl.northwestern.edu/netlogo/)  
-[![Model](https://img.shields.io/badge/Model-Agent--Based%20Model-2563EB.svg)](https://chatgpt.com/c/6aaa8554-7c84-83e9-893b-a9e2a3ac62c4#)  
-[![Version](https://img.shields.io/badge/version-2.0-0f172a.svg)](https://chatgpt.com/c/6aaa8554-7c84-83e9-893b-a9e2a3ac62c4#)  
-[![Research](https://img.shields.io/badge/Research-Exploratory-7C3AED.svg)](https://chatgpt.com/c/6aaa8554-7c84-83e9-893b-a9e2a3ac62c4#)  
-[![Reproducibility](https://img.shields.io/badge/Reproducibility-Seed%20%2B%20Replications-059669.svg)](https://chatgpt.com/c/6aaa8554-7c84-83e9-893b-a9e2a3ac62c4#)
+[![Model](https://img.shields.io/badge/Model-Agent--Based%20Model-2563EB.svg)](https://github.com/chavatte/climate-stress-test)  
+[![Version](https://img.shields.io/badge/version-2.0-0f172a.svg)](https://doi.org/10.5281/zenodo.22836683)  
+[![Research](https://img.shields.io/badge/Research-Exploratory-7C3AED.svg)](https://chavatte.vercel.app/projects/climate-stress-test)  
+[![Reproducibility](https://img.shields.io/badge/Reproducibility-Seed%20%2B%20Replications-059669.svg)](#9-reproducibility)
 
 ---
 
