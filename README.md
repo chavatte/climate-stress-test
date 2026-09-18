@@ -31,6 +31,7 @@ _____________|','   ///_/-------------/   |                 \_/_________________
 
 > **Version 2.0 — Reproducibility and Numerical Verification**
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22836683.svg)](https://doi.org/10.5281/zenodo.22836683)  
 [![NetLogo](https://img.shields.io/badge/NetLogo-7.x-4E9F3D.svg)](https://ccl.northwestern.edu/netlogo/)  
 [![Model](https://img.shields.io/badge/Model-Agent--Based%20Model-2563EB.svg)](https://chatgpt.com/c/6aaa8554-7c84-83e9-893b-a9e2a3ac62c4#)  
 [![Version](https://img.shields.io/badge/version-2.0-0f172a.svg)](https://chatgpt.com/c/6aaa8554-7c84-83e9-893b-a9e2a3ac62c4#)  
@@ -41,7 +42,7 @@ _____________|','   ///_/-------------/   |                 \_/_________________
 
 ## DOI
 
-**Zenodo DOI:** `[]`
+**Zenodo DOI:** 10.5281/zenodo.22836683
 
 ---
 
@@ -1023,7 +1024,7 @@ If you use, modify, analyze, or build upon this model, please cite the correspon
 
 **Chavatte, João Carlos. (2026). _Climate Stress Test — Brazil 2026–2030: An Exploratory Agent-Based Model for Systemic Climate Risk Stress Testing_. Version 2.0. Zenodo.**
 
-**DOI:** `[]`
+**DOI:** 10.5281/zenodo.22836683
 
 ### Citation file
 
