@@ -4,7 +4,7 @@
   "name": "Climate Stress Test — Brazil 2026–2030",
   "version": "2.0",
   "description": "Exploratory Agent-Based Model implemented in NetLogo to investigate systemic vulnerability and cascading interactions among synthetic municipalities under interacting climate, environmental, infrastructural, socioeconomic, and network-related stressors.",
-  "codeRepository": "https://github.com/chavatte",
+  "codeRepository": "https://github.com/chavatte/climate-stress-test",
   "url": "https://chavatte.vercel.app/projects/climate-stress-test",
   "programmingLanguage": "NetLogo",
   "author": {
