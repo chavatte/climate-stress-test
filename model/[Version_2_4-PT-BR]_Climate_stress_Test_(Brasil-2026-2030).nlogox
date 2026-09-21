@@ -1,0 +1,2836 @@
+<?xml version="1.0" encoding="utf-8"?>
+<model version="NetLogo 7.0.4" snapToGrid="true">
+  <code><![CDATA[
+; ============================================================================
+; CLIMATE STRESS TEST — BRAZIL 2026–2030
+; Exploratory Agent-Based Model (ABM)
+; NetLogo 7.0.4
+;
+; v2.1 — Formal Experiment Metrics / Reproducibility Logic
+;
+; IMPORTANT:
+; This is an exploratory stress-testing model, NOT an official forecast.
+; Climate drivers are normalized experimental inputs (0–100), not physical
+; units. Empirical calibration should be performed before predictive use.
+; ============================================================================
+
+
+; ============================================================================
+; MODEL ENTITIES
+; ============================================================================
+
+breed [municipalities municipality]
+undirected-link-breed [dependencies dependency]
+
+
+; ============================================================================
+; MUNICIPALITY ATTRIBUTES
+; ============================================================================
+
+municipalities-own [
+  region
+
+  ; Static / initial characteristics
+  exposure
+  vulnerability
+  resilience
+
+  water-sensitivity
+  agriculture-sensitivity
+  urban-sensitivity
+  heat-sensitivity
+
+  ; Dynamic state variables
+  hazard
+  water-stress
+  agricultural-impact
+  energy-stress
+  economic-impact
+  cascade-load
+  local-risk
+  damage
+  recovery-capacity
+  status
+]
+
+
+; ============================================================================
+; DEPENDENCY ATTRIBUTES
+; ============================================================================
+
+dependencies-own [
+  dependency-weight
+]
+
+
+; ============================================================================
+; GLOBAL STATE
+; ============================================================================
+
+globals [
+  ; Aggregate risk indicators
+  system-risk
+  average-water-stress
+  average-agricultural-impact
+  average-energy-stress
+  average-economic-impact
+  average-damage
+  average-recovery-capacity
+
+  ; Peak indicators
+  peak-system-risk
+  peak-average-damage
+
+  ; System state
+  critical-municipalities
+
+  ; Cascade indicators
+  cascade-events
+  total-cascade-events
+  total-cascade-load
+
+  ; Temporal state
+  current-year
+  current-month
+
+  ; Effective scenario protection
+  effective-adaptation
+  effective-infrastructure
+
+  ; Reproducibility
+  random-seed-value
+
+  ; Observed network structure
+  network-edge-count
+  network-mean-degree
+  network-realized-density
+]
+
+
+; ============================================================================
+; SETUP
+; ============================================================================
+
+; ---------------------------------------------------------------------------
+; Default reproducible setup.
+;
+; This keeps the original fixed-seed behavior for normal interactive runs.
+; ---------------------------------------------------------------------------
+
+to setup
+  setup-with-seed 20260916
+end
+
+
+; ---------------------------------------------------------------------------
+; Generalized setup procedure.
+;
+; This is the procedure to use for:
+; - replication testing
+; - Monte Carlo experiments
+; - BehaviorSpace
+; - automated headless execution
+; ---------------------------------------------------------------------------
+
+to setup-with-seed [seed-value]
+
+  clear-all
+
+  ; -------------------------------------------------------------------------
+  ; RANDOM SEED
+  ; -------------------------------------------------------------------------
+
+  set random-seed-value seed-value
+  random-seed random-seed-value
+
+
+  ; -------------------------------------------------------------------------
+  ; TIME
+  ; -------------------------------------------------------------------------
+
+  set current-year 2026
+  set current-month 1
+
+
+  ; -------------------------------------------------------------------------
+  ; GLOBAL METRICS
+  ; -------------------------------------------------------------------------
+
+  set system-risk 0
+
+  set average-water-stress 0
+  set average-agricultural-impact 0
+  set average-energy-stress 0
+  set average-economic-impact 0
+  set average-damage 0
+  set average-recovery-capacity 0
+
+  set peak-system-risk 0
+  set peak-average-damage 0
+
+  set critical-municipalities 0
+
+  set cascade-events 0
+  set total-cascade-events 0
+  set total-cascade-load 0
+
+  set network-edge-count 0
+  set network-mean-degree 0
+  set network-realized-density 0
+
+
+  ; -------------------------------------------------------------------------
+  ; MODEL INITIALIZATION
+  ; -------------------------------------------------------------------------
+
+  configure-scenario
+  create-municipality-agents
+  create-system-network
+
+  calculate-network-metrics
+  calculate-all-metrics
+
+  reset-ticks
+end
+
+
+; ============================================================================
+; SCENARIOS
+; ============================================================================
+
+to configure-scenario
+
+  if scenario-mode = "FAIL OPEN" [
+    set effective-adaptation (adaptation-investment * 0.55)
+    set effective-infrastructure (infrastructure-resilience * 0.55)
+  ]
+
+
+  if scenario-mode = "BALANCED" [
+    set effective-adaptation adaptation-investment
+    set effective-infrastructure infrastructure-resilience
+  ]
+
+
+  if scenario-mode = "RESILIENT BY DESIGN" [
+    set effective-adaptation min (
+      list 100 (adaptation-investment * 1.30)
+    )
+
+    set effective-infrastructure min (
+      list 100 (infrastructure-resilience * 1.30)
+    )
+  ]
+
+end
+
+
+
+
+; ============================================================================
+; AGENTS
+; ============================================================================
+
+to create-municipality-agents
+
+  create-municipalities num-municipalities [
+
+    setxy random-xcor random-ycor
+
+    assign-region
+    initialize-municipality
+  ]
+
+end
+
+
+; ============================================================================
+; REGION ASSIGNMENT
+; ============================================================================
+
+to assign-region
+
+  ifelse xcor < -12 [
+
+    set region "North"
+
+  ] [
+
+    ifelse xcor < -4 [
+
+      set region "Northeast"
+
+    ] [
+
+      ifelse xcor < 4 [
+
+        set region "Midwest"
+
+      ] [
+
+        ifelse xcor < 12 [
+
+          set region "Southeast"
+
+        ] [
+
+          set region "South"
+
+        ]
+
+      ]
+
+    ]
+
+  ]
+
+end
+
+
+; ============================================================================
+; MUNICIPALITY INITIALIZATION
+; ============================================================================
+
+to initialize-municipality
+
+  ; -------------------------------------------------------------------------
+  ; Controlled synthetic distributions.
+  ; These remain stylized until empirical calibration.
+  ; -------------------------------------------------------------------------
+
+  set exposure (40 + random 41)
+  set vulnerability (40 + random 41)
+  set resilience (35 + random 41)
+
+  set water-sensitivity (40 + random 41)
+  set agriculture-sensitivity (40 + random 41)
+  set urban-sensitivity (35 + random 46)
+  set heat-sensitivity (40 + random 41)
+
+
+  ; -------------------------------------------------------------------------
+  ; Stylized regional adjustments
+  ; -------------------------------------------------------------------------
+
+  if region = "North" [
+
+    set water-sensitivity min (
+      list 100 (water-sensitivity + 5)
+    )
+
+    set vulnerability min (
+      list 100 (vulnerability + 5)
+    )
+  ]
+
+
+  if region = "Northeast" [
+
+    set water-sensitivity min (
+      list 100 (water-sensitivity + 15)
+    )
+
+    set agriculture-sensitivity min (
+      list 100 (agriculture-sensitivity + 10)
+    )
+  ]
+
+
+  if region = "Midwest" [
+
+    set agriculture-sensitivity min (
+      list 100 (agriculture-sensitivity + 15)
+    )
+  ]
+
+
+  if region = "Southeast" [
+
+    set urban-sensitivity min (
+      list 100 (urban-sensitivity + 15)
+    )
+
+    set heat-sensitivity min (
+      list 100 (heat-sensitivity + 10)
+    )
+
+    set exposure min (
+      list 100 (exposure + 10)
+    )
+  ]
+
+
+  if region = "South" [
+
+    set exposure min (
+      list 100 (exposure + 5)
+    )
+  ]
+
+
+  ; -------------------------------------------------------------------------
+  ; Dynamic state initialization
+  ; -------------------------------------------------------------------------
+
+  set hazard 0
+  set water-stress 0
+  set agricultural-impact 0
+  set energy-stress 0
+  set economic-impact 0
+  set cascade-load 0
+  set local-risk 0
+  set damage 0
+  set recovery-capacity 0
+
+  set status "STABLE"
+
+end
+
+
+; ============================================================================
+; DEPENDENCY NETWORK
+; ============================================================================
+
+to create-system-network
+
+  ask municipalities [
+
+    ; The user-facing parameter "network-density" controls the desired
+    ; number of attempted connections.
+    ;
+    ; IMPORTANT:
+    ; This parameter is retained for compatibility with the existing model.
+    ; Actual network structure is measured after creation through:
+    ; - network-edge-count
+    ; - network-mean-degree
+
+    let wanted-links max (
+      list 1 (round (network-density / 2))
+    )
+
+
+    repeat wanted-links [
+
+      let candidate one-of other municipalities
+
+
+      if candidate != nobody and
+         not dependency-neighbor? candidate [
+
+        create-dependency-with candidate [
+
+          set dependency-weight (
+            0.30 + random-float 0.70
+          )
+
+        ]
+
+      ]
+
+    ]
+
+  ]
+
+end
+
+
+; ============================================================================
+; NETWORK METRICS
+; ============================================================================
+
+to calculate-network-metrics
+
+  set network-edge-count count dependencies
+
+
+  ifelse any? municipalities [
+
+    ; For an undirected network:
+    ;
+    ; Mean Degree = 2E / N
+    ;
+    ; E = number of edges
+    ; N = number of municipalities
+
+    set network-mean-degree (
+      (2 * network-edge-count) /
+      count municipalities
+    )
+
+
+    ; Realized density for a simple undirected graph:
+    ;
+    ; Density = E / [N(N-1)/2]
+    ;
+    ; This is an observed structural metric. It is intentionally
+    ; distinct from the user-facing "network-density" control.
+
+    let possible-edges (
+      (count municipalities) *
+      ((count municipalities) - 1) /
+      2
+    )
+
+
+    ifelse possible-edges > 0 [
+      set network-realized-density (
+        network-edge-count /
+        possible-edges
+      )
+    ] [
+      set network-realized-density 0
+    ]
+
+  ] [
+
+    set network-mean-degree 0
+    set network-realized-density 0
+
+  ]
+
+end
+
+
+; ============================================================================
+; MAIN SIMULATION LOOP
+; ============================================================================
+
+to go
+
+  ; -------------------------------------------------------------------------
+  ; Five-year experimental horizon
+  ; -------------------------------------------------------------------------
+
+  if ticks >= 60 [
+    stop
+  ]
+
+
+  ; -------------------------------------------------------------------------
+  ; Temporal state
+  ; -------------------------------------------------------------------------
+
+  set current-year (
+    2026 + floor (ticks / 12)
+  )
+
+  set current-month (
+    1 + (ticks mod 12)
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Scenario configuration
+  ; -------------------------------------------------------------------------
+
+  configure-scenario
+
+
+  ; -------------------------------------------------------------------------
+  ; LOCAL MUNICIPAL PROCESSES
+  ; -------------------------------------------------------------------------
+
+  ask municipalities [
+
+    update-local-hazard
+    calculate-local-risk
+    update-sector-impacts
+
+  ]
+
+
+  ; -------------------------------------------------------------------------
+  ; SYSTEMIC PROCESSES
+  ; -------------------------------------------------------------------------
+
+  propagate-cascades
+
+  apply-adaptation
+
+  apply-recovery
+
+
+  ; -------------------------------------------------------------------------
+  ; GLOBAL METRICS
+  ; -------------------------------------------------------------------------
+
+  calculate-network-metrics
+  calculate-all-metrics
+
+
+  ; -------------------------------------------------------------------------
+  ; Advance simulation
+  ; -------------------------------------------------------------------------
+
+  tick
+
+end
+
+
+; ============================================================================
+; CLIMATE PRESSURE / HAZARD
+; ============================================================================
+
+to update-local-hazard
+
+  ; Approx. 1.2% annual temporal drift across the 2026–2030 experiment.
+  let monthly-load (
+    1 + (ticks * (0.012 / 12))
+  )
+
+
+  ; Approx. ±10% seasonal variation.
+  let seasonal-factor (
+    1.0 + (0.10 * sin (ticks * 30))
+  )
+
+
+  ; Small stochastic process / observation noise.
+  let variability (
+    (random-float 4) - 2
+  )
+
+
+  let regional-factor 1
+  let regional-el-nino 1
+
+
+  ; -------------------------------------------------------------------------
+  ; Stylized regional response coefficients
+  ; -------------------------------------------------------------------------
+
+  if region = "North" [
+
+    set regional-factor 1.05
+    set regional-el-nino 1.10
+
+  ]
+
+
+  if region = "Northeast" [
+
+    set regional-factor 1.08
+    set regional-el-nino 1.15
+
+  ]
+
+
+  if region = "Midwest" [
+
+    set regional-factor 1.03
+    set regional-el-nino 1.05
+
+  ]
+
+
+  if region = "Southeast" [
+
+    set regional-factor 1.04
+    set regional-el-nino 0.95
+
+  ]
+
+
+  if region = "South" [
+
+    set regional-factor 1.02
+    set regional-el-nino 1.05
+
+  ]
+
+
+  ; -------------------------------------------------------------------------
+  ; Normalized climate pressure
+  ;
+  ; Warming       = 45%
+  ; El Niño       = 20%
+  ; Deforestation = 20%
+  ; Urban stress  = 15%
+  ; -------------------------------------------------------------------------
+
+  let base-pressure (
+
+    (warming-pressure * 0.45) +
+    (el-nino-intensity * 0.20 * regional-el-nino) +
+    (deforestation-pressure * 0.20) +
+    (urban-pressure * 0.15)
+
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Final normalized hazard
+  ; -------------------------------------------------------------------------
+
+  let adjusted-load (
+
+    (base-pressure *
+     regional-factor *
+     monthly-load *
+     seasonal-factor)
+
+    + variability
+
+  )
+
+
+  set hazard max (
+    list 0 (
+      min (list 100 adjusted-load)
+    )
+  )
+
+end
+
+
+; ============================================================================
+; RUN TO 2030
+; ============================================================================
+
+to run-to-2030
+
+  setup
+
+  while [ticks < 60] [
+    go
+  ]
+
+end
+
+
+; ============================================================================
+; LOCAL RISK
+; ============================================================================
+
+to calculate-local-risk
+
+  let raw-risk (
+    (hazard * exposure * vulnerability) / 10000
+  )
+
+
+  let resilience-buffer (
+    resilience * 0.35
+  )
+
+
+  let infrastructure-buffer (
+    effective-infrastructure * 0.20
+  )
+
+
+  let adaptation-buffer (
+    effective-adaptation * 0.15
+  )
+
+
+  let calc-risk (
+
+    raw-risk
+
+    - resilience-buffer
+    - infrastructure-buffer
+    - adaptation-buffer
+
+  )
+
+
+  set local-risk max (
+    list 0 (
+      min (list 100 calc-risk)
+    )
+  )
+
+end
+
+
+; ============================================================================
+; SECTORAL IMPACTS
+; ============================================================================
+
+to update-sector-impacts
+
+  ; -------------------------------------------------------------------------
+  ; Environmental pressure
+  ; -------------------------------------------------------------------------
+
+  let env-pressure (
+
+    (deforestation-pressure * 0.60) +
+    (urban-pressure * 0.40)
+
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Heat pressure
+  ; -------------------------------------------------------------------------
+
+  let heat-pressure (
+
+    (warming-pressure * 0.70) +
+    (el-nino-intensity * 0.20) +
+    (urban-pressure * 0.10)
+
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Water stress
+  ; -------------------------------------------------------------------------
+
+  let calc-water (
+
+    (hazard * 0.55) +
+    (water-sensitivity * 0.25) +
+    (env-pressure * 0.20) -
+    (effective-adaptation * 0.18)
+
+  )
+
+
+  set water-stress max (
+    list 0 (
+      min (list 100 calc-water)
+    )
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Agricultural impact
+  ; -------------------------------------------------------------------------
+
+  let calc-agri (
+
+    (water-stress * 0.50) +
+    (heat-pressure * 0.25) +
+    (agriculture-sensitivity * 0.25) -
+    (effective-adaptation * 0.12)
+
+  )
+
+
+  set agricultural-impact max (
+    list 0 (
+      min (list 100 calc-agri)
+    )
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Energy stress
+  ; -------------------------------------------------------------------------
+
+  let calc-energy (
+
+    (water-stress * 0.45) +
+    (heat-pressure * 0.25) +
+    (urban-sensitivity * 0.20) +
+    (urban-pressure * 0.10) -
+    (effective-infrastructure * 0.15)
+
+  )
+
+
+  set energy-stress max (
+    list 0 (
+      min (list 100 calc-energy)
+    )
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Economic impact
+  ; -------------------------------------------------------------------------
+
+  let calc-econ (
+
+    (agricultural-impact * 0.35) +
+    (energy-stress * 0.30) +
+    (water-stress * 0.15) +
+    (local-risk * 0.20)
+
+  )
+
+
+  set economic-impact max (
+    list 0 (
+      min (list 100 calc-econ)
+    )
+  )
+
+
+  ; -------------------------------------------------------------------------
+  ; Recovery capacity
+  ; -------------------------------------------------------------------------
+
+  set recovery-capacity min (
+    list 100 (
+
+      (resilience * 0.40) +
+      (effective-infrastructure * 0.30) +
+      (effective-adaptation * 0.30)
+
+    )
+  )
+
+end
+
+
+; ============================================================================
+; CASCADES
+; ============================================================================
+
+to propagate-cascades
+
+  ; -------------------------------------------------------------------------
+  ; Current-period cascade events
+  ;
+  ; This represents events generated during the CURRENT simulation tick.
+  ; -------------------------------------------------------------------------
+
+  set cascade-events 0
+
+
+  ask municipalities [
+
+    ; -----------------------------------------------------------------------
+    ; Network-mediated spillover
+    ; -----------------------------------------------------------------------
+
+    if any? link-neighbors [
+
+      let neighbor-risk (
+        mean [local-risk] of link-neighbors
+      )
+
+
+      let spillover (
+
+        (neighbor-risk *
+         network-density *
+         0.010)
+
+        *
+
+        (cascade-sensitivity *
+         0.010)
+
+      )
+
+
+      ; ---------------------------------------------------------------------
+      ; Persistent cascade memory
+      ;
+      ; Previous cascade load decays by 8% per tick.
+      ; New spillover is then added.
+      ; ---------------------------------------------------------------------
+
+      set cascade-load max (
+        list 0 (
+          min (
+            list 100 (
+              (cascade-load * 0.92) +
+              spillover
+            )
+          )
+        )
+      )
+
+    ]
+
+
+    ; -----------------------------------------------------------------------
+    ; Cascade trigger #1
+    ; Water + agriculture
+    ; -----------------------------------------------------------------------
+
+    if water-stress > 70 and
+       agricultural-impact > 65 [
+
+      set cascade-load min (
+        list 100 (
+          cascade-load + 7
+        )
+      )
+
+      ; Current-tick counter
+      set cascade-events (
+        cascade-events + 1
+      )
+
+      ; Cumulative counter
+      set total-cascade-events (
+        total-cascade-events + 1
+      )
+
+    ]
+
+
+    ; -----------------------------------------------------------------------
+    ; Cascade trigger #2
+    ; Agriculture + energy
+    ; -----------------------------------------------------------------------
+
+    if agricultural-impact > 70 and
+       energy-stress > 65 [
+
+      set cascade-load min (
+        list 100 (
+          cascade-load + 6
+        )
+      )
+
+      set cascade-events (
+        cascade-events + 1
+      )
+
+      set total-cascade-events (
+        total-cascade-events + 1
+      )
+
+    ]
+
+
+    ; -----------------------------------------------------------------------
+    ; Cascade trigger #3
+    ; Hazard + urban pressure
+    ; -----------------------------------------------------------------------
+
+    if hazard > 75 and
+       urban-pressure > 70 [
+
+      set cascade-load min (
+        list 100 (
+          cascade-load + 5
+        )
+      )
+
+      set cascade-events (
+        cascade-events + 1
+      )
+
+      set total-cascade-events (
+        total-cascade-events + 1
+      )
+
+    ]
+
+
+    ; -----------------------------------------------------------------------
+    ; Cascade contribution to local risk
+    ; -----------------------------------------------------------------------
+
+    set local-risk max (
+      list 0 (
+        min (
+          list 100 (
+            local-risk +
+            (cascade-load * 0.25)
+          )
+        )
+      )
+    )
+
+  ]
+
+end
+
+
+; ============================================================================
+; ADAPTATION
+; ============================================================================
+
+to apply-adaptation
+
+  ask municipalities [
+
+    ; -----------------------------------------------------------------------
+    ; Monthly protective gains
+    ; -----------------------------------------------------------------------
+
+    let adaptation-gain (
+      effective-adaptation * 0.020
+    )
+
+
+    let infrastructure-gain (
+      effective-infrastructure * 0.015
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Resilience accumulation
+    ; -----------------------------------------------------------------------
+
+    set resilience min (
+      list 100 (
+        resilience + adaptation-gain
+      )
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Damage mitigation
+    ; -----------------------------------------------------------------------
+
+    set damage max (
+      list 0 (
+        damage -
+        adaptation-gain -
+        infrastructure-gain
+      )
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Cascade mitigation
+    ; -----------------------------------------------------------------------
+
+    set cascade-load max (
+      list 0 (
+        cascade-load -
+        (adaptation-gain * 0.60)
+      )
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Local risk mitigation
+    ; -----------------------------------------------------------------------
+
+    set local-risk max (
+      list 0 (
+        local-risk -
+        adaptation-gain -
+        infrastructure-gain
+      )
+    )
+
+  ]
+
+end
+
+
+; ============================================================================
+; DAMAGE / RECOVERY
+; ============================================================================
+
+to apply-recovery
+
+  ask municipalities [
+
+    ; -----------------------------------------------------------------------
+    ; Incoming damage
+    ; -----------------------------------------------------------------------
+
+    let incoming-damage (
+
+      (local-risk * 0.55) +
+      (economic-impact * 0.20) +
+      (cascade-load * 0.25)
+
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Recovery rate
+    ; -----------------------------------------------------------------------
+
+    let recovery (
+      recovery-capacity * 0.020
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Damage accumulation
+    ; -----------------------------------------------------------------------
+
+    let calc-damage (
+
+      damage +
+      (incoming-damage * 0.35) -
+      recovery
+
+    )
+
+
+    set damage max (
+      list 0 (
+        min (list 100 calc-damage)
+      )
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Internal status
+    ;
+    ; This is model state, not a real-world classification.
+    ; -----------------------------------------------------------------------
+
+    set status classify-status local-risk damage
+
+  ]
+
+end
+
+
+; ============================================================================
+; GENERAL METRICS
+; ============================================================================
+
+to calculate-all-metrics
+
+  ifelse any? municipalities [
+
+    ; -----------------------------------------------------------------------
+    ; Mean system indicators
+    ; -----------------------------------------------------------------------
+
+    set system-risk (
+      mean [local-risk] of municipalities
+    )
+
+
+    set average-water-stress (
+      mean [water-stress] of municipalities
+    )
+
+
+    set average-agricultural-impact (
+      mean [agricultural-impact] of municipalities
+    )
+
+
+    set average-energy-stress (
+      mean [energy-stress] of municipalities
+    )
+
+
+    set average-economic-impact (
+      mean [economic-impact] of municipalities
+    )
+
+
+    set average-damage (
+      mean [damage] of municipalities
+    )
+
+
+    set average-recovery-capacity (
+      mean [recovery-capacity] of municipalities
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Peaks
+    ; -----------------------------------------------------------------------
+
+    set peak-system-risk (
+      max (
+        list peak-system-risk system-risk
+      )
+    )
+
+
+    set peak-average-damage (
+      max (
+        list peak-average-damage average-damage
+      )
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Critical municipalities
+    ; -----------------------------------------------------------------------
+
+    set critical-municipalities (
+      count municipalities with [
+        local-risk >= 75 or
+        damage >= 75
+      ]
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Total system cascade load
+    ; -----------------------------------------------------------------------
+
+    set total-cascade-load (
+      sum [cascade-load] of municipalities
+    )
+
+
+    ; -----------------------------------------------------------------------
+    ; Actual network statistics
+    ; -----------------------------------------------------------------------
+
+    calculate-network-metrics
+
+  ] [
+
+    ; -----------------------------------------------------------------------
+    ; Empty model fallback
+    ; -----------------------------------------------------------------------
+
+    set system-risk 0
+
+    set average-water-stress 0
+    set average-agricultural-impact 0
+    set average-energy-stress 0
+    set average-economic-impact 0
+    set average-damage 0
+    set average-recovery-capacity 0
+
+    set peak-system-risk 0
+    set peak-average-damage 0
+
+    set critical-municipalities 0
+
+    set total-cascade-load 0
+
+    set network-edge-count 0
+    set network-mean-degree 0
+    set network-realized-density 0
+
+  ]
+
+end
+
+
+; ============================================================================
+; STATUS CLASSIFICATION
+; ============================================================================
+
+to-report classify-status [risk-value damage-value]
+
+  if risk-value < 25 and
+     damage-value < 25 [
+
+    report "STABLE"
+
+  ]
+
+
+  if risk-value < 50 and
+     damage-value < 50 [
+
+    report "WARNING"
+
+  ]
+
+
+  if risk-value < 75 and
+     damage-value < 75 [
+
+    report "HIGH"
+
+  ]
+
+
+  report "CRITICAL"
+
+end
+
+
+; ============================================================================
+; FORMAL EXPERIMENT METRICS
+; ============================================================================
+;
+; These reporters expose reproducibility, cascade, and observed network
+; structure as formal model outputs for BehaviorSpace, headless execution,
+; CSV export, or other automated experiment runners.
+;
+; The user-facing "network-density" remains an input/control parameter.
+; "network-realized-density" is the measured density of the generated graph.
+; ============================================================================
+
+to-report metric-experiment-seed
+
+  report random-seed-value
+
+end
+
+
+to-report metric-cascade-events-current
+
+  report cascade-events
+
+end
+
+
+to-report metric-cascade-events-total
+
+  report total-cascade-events
+
+end
+
+
+to-report metric-cascade-event-rate
+
+  ifelse ticks > 0 [
+    report total-cascade-events / ticks
+  ] [
+    report 0
+  ]
+
+end
+
+
+to-report metric-network-edge-count
+
+  report network-edge-count
+
+end
+
+
+to-report metric-network-mean-degree
+
+  report network-mean-degree
+
+end
+
+
+to-report metric-network-realized-density
+
+  report network-realized-density
+
+end
+
+
+; ============================================================================
+; SCENARIO COMMANDS
+; ============================================================================
+
+to setup-scenario [scenario-name seed-value]
+  set scenario-mode scenario-name
+  setup-with-seed seed-value
+end
+
+
+to scenario-fail-open
+  setup-scenario "FAIL OPEN" 20260916
+end
+
+
+to scenario-balanced
+  setup-scenario "BALANCED" 20260916
+end
+
+
+to scenario-resilient
+  setup-scenario "RESILIENT BY DESIGN" 20260916
+end
+
+; ============================================================================
+; SCENARIO COMPARISON
+; ============================================================================
+;
+; Executes the three predefined scenarios under the same initial conditions:
+; - same random seed
+; - same number of municipalities
+; - same network-generation process
+; - same 60-month experimental horizon
+;
+; The procedure reports comparative outputs without declaring a preferred
+; scenario.
+; ============================================================================
+
+to compare-scenarios
+
+  let comparison-seed 20260916
+  let original-scenario scenario-mode
+
+  ; --------------------------------------------------------------------------
+  ; HEADER
+  ; --------------------------------------------------------------------------
+
+  print ""
+  print "======================================================================"
+  print "                     SCENARIO COMPARISON"
+  print "======================================================================"
+
+  print (word "Seed: " comparison-seed)
+  print "Simulation horizon: 60 months"
+  print ""
+
+  print "Scenario                 Final Risk   Peak Risk   Final Damage   Cascades"
+  print "----------------------------------------------------------------------"
+
+
+  ; --------------------------------------------------------------------------
+  ; FAIL OPEN
+  ; --------------------------------------------------------------------------
+
+  setup-scenario "FAIL OPEN" comparison-seed
+
+  while [ticks < 60] [
+    go
+  ]
+
+  let fail-final-risk system-risk
+  let fail-peak-risk peak-system-risk
+  let fail-final-damage average-damage
+  let fail-cascades total-cascade-events
+
+  print (
+    word
+      "FAIL OPEN                "
+      (precision fail-final-risk 2)
+      "          "
+      (precision fail-peak-risk 2)
+      "          "
+      (precision fail-final-damage 2)
+      "          "
+      fail-cascades
+  )
+
+
+  ; --------------------------------------------------------------------------
+  ; BALANCED
+  ; --------------------------------------------------------------------------
+
+  setup-scenario "BALANCED" comparison-seed
+
+  while [ticks < 60] [
+    go
+  ]
+
+  let balanced-final-risk system-risk
+  let balanced-peak-risk peak-system-risk
+  let balanced-final-damage average-damage
+  let balanced-cascades total-cascade-events
+
+  print (
+    word
+      "BALANCED                 "
+      (precision balanced-final-risk 2)
+      "          "
+      (precision balanced-peak-risk 2)
+      "          "
+      (precision balanced-final-damage 2)
+      "          "
+      balanced-cascades
+  )
+
+
+  ; --------------------------------------------------------------------------
+  ; RESILIENT BY DESIGN
+  ; --------------------------------------------------------------------------
+
+  setup-scenario "RESILIENT BY DESIGN" comparison-seed
+
+  while [ticks < 60] [
+    go
+  ]
+
+  let resilient-final-risk system-risk
+  let resilient-peak-risk peak-system-risk
+  let resilient-final-damage average-damage
+  let resilient-cascades total-cascade-events
+
+  print (
+    word
+      "RESILIENT BY DESIGN      "
+      (precision resilient-final-risk 2)
+      "          "
+      (precision resilient-peak-risk 2)
+      "          "
+      (precision resilient-final-damage 2)
+      "          "
+      resilient-cascades
+  )
+
+
+  ; --------------------------------------------------------------------------
+  ; NETWORK STRUCTURE
+  ; --------------------------------------------------------------------------
+  ;
+  ; Because all scenarios use the same seed, the synthetic network should
+  ; remain structurally identical across the three runs.
+  ; --------------------------------------------------------------------------
+
+  print ""
+  print "----------------------------------------------------------------------"
+  print "CONTROLLED NETWORK STRUCTURE"
+  print (word "Network edges: "
+             network-edge-count)
+  print (word "Network mean degree: "
+             precision network-mean-degree 2)
+  print (word "Network realized density: "
+             precision network-realized-density 4)
+
+
+  ; --------------------------------------------------------------------------
+  ; COMPARISON METRICS
+  ; --------------------------------------------------------------------------
+
+  print ""
+  print "CASCADE EVENT RATE"
+  print (word
+           "FAIL OPEN: "
+           precision (fail-cascades / 60) 2
+           " events/month")
+
+  print (word
+           "BALANCED: "
+           precision (balanced-cascades / 60) 2
+           " events/month")
+
+  print (word
+           "RESILIENT BY DESIGN: "
+           precision (resilient-cascades / 60) 2
+           " events/month")
+
+
+  ; --------------------------------------------------------------------------
+  ; FOOTER
+  ; --------------------------------------------------------------------------
+
+  print ""
+  print "----------------------------------------------------------------------"
+  print "Comparison completed using the same experimental seed."
+  print "Values represent model outputs on normalized 0–100 scales."
+  print "No scenario is automatically classified as preferred."
+  print "======================================================================"
+  print ""
+
+
+  ; --------------------------------------------------------------------------
+  ; RESTORE USER'S PREVIOUS SCENARIO
+  ; --------------------------------------------------------------------------
+  ;
+  ; Reinitialize the model so the interface is not left displaying one
+  ; scenario while another scenario is selected.
+  ; --------------------------------------------------------------------------
+
+  set scenario-mode original-scenario
+  setup
+
+end
+
+
+; ============================================================================
+; SUMMARY
+; ============================================================================
+
+to print-summary
+
+  print (
+    word
+      "=== CLIMATE STRESS TEST — "
+      current-year
+      " ==="
+  )
+
+
+  print (
+    word
+      "Scenario: "
+      scenario-mode
+  )
+
+
+  print (
+    word
+      "Random seed: "
+      random-seed-value
+  )
+
+
+  print (
+    word
+      "Ticks: "
+      ticks
+  )
+
+
+  print (
+    word
+      "Systemic risk: "
+      precision system-risk 2
+  )
+
+
+  print (
+    word
+      "Peak systemic risk: "
+      precision peak-system-risk 2
+  )
+
+
+  print (
+    word
+      "Water stress: "
+      precision average-water-stress 2
+  )
+
+
+  print (
+    word
+      "Agricultural impact: "
+      precision average-agricultural-impact 2
+  )
+
+
+  print (
+    word
+      "Energy stress: "
+      precision average-energy-stress 2
+  )
+
+
+  print (
+    word
+      "Economic impact: "
+      precision average-economic-impact 2
+  )
+
+
+  print (
+    word
+      "Average damage: "
+      precision average-damage 2
+  )
+
+
+  print (
+    word
+      "Peak average damage: "
+      precision peak-average-damage 2
+  )
+
+
+  print (
+    word
+      "Average recovery capacity: "
+      precision average-recovery-capacity 2
+  )
+
+
+  print (
+    word
+      "Critical municipalities: "
+      critical-municipalities
+  )
+
+
+  ; Current simulation tick
+  print (
+    word
+      "Cascade events this tick: "
+      cascade-events
+  )
+
+
+  ; Accumulated simulation total
+  print (
+    word
+      "Total cascade events: "
+      total-cascade-events
+  )
+
+
+  print (
+    word
+      "Total cascade load: "
+      precision total-cascade-load 2
+  )
+
+
+  ; Actual generated network statistics
+  print (
+    word
+      "Network edges: "
+      network-edge-count
+  )
+
+
+  print (
+    word
+      "Network mean degree: "
+      precision network-mean-degree 2
+  )
+
+
+  print (
+    word
+      "Network realized density: "
+      precision network-realized-density 4
+  )
+
+end
+
+
+; ============================================================================
+; REPRODUCIBILITY / REPLICATION TEST
+; ============================================================================
+
+to replication-test [number-of-runs]
+
+  let run-id 1
+
+
+  repeat number-of-runs [
+
+    ; -----------------------------------------------------------------------
+    ; Each replication receives an independent seed.
+    ;
+    ; IMPORTANT:
+    ; We call setup-with-seed directly.
+    ; We DO NOT call setup here, because setup intentionally uses the
+    ; fixed reproducibility seed 20260916.
+    ; -----------------------------------------------------------------------
+
+    let replication-seed (
+      20260916 + run-id
+    )
+
+
+    setup-with-seed replication-seed
+
+
+    ; -----------------------------------------------------------------------
+    ; Run complete 60-month trajectory
+    ; -----------------------------------------------------------------------
+
+    while [ticks < 60] [
+      go
+    ]
+
+
+    ; -----------------------------------------------------------------------
+    ; Output
+    ; -----------------------------------------------------------------------
+
+    print (
+
+      word
+        "REPLICATION "
+        run-id
+        " | SEED="
+        random-seed-value
+        " | SYSTEM_RISK="
+        precision system-risk 2
+        " | PEAK_RISK="
+        precision peak-system-risk 2
+        " | DAMAGE="
+        precision average-damage 2
+        " | CASCADE_EVENTS="
+        total-cascade-events
+        " | NETWORK_MEAN_DEGREE="
+        precision network-mean-degree 2
+        " | NETWORK_DENSITY="
+        precision network-realized-density 4
+
+    )
+
+
+    set run-id (
+      run-id + 1
+    )
+
+  ]
+
+end
+  ]]></code>
+  <widgets>
+    <view x="395" wrappingAllowedX="true" y="95" frameRate="30.0" minPycor="-16" height="494" showTickCounter="true" patchSize="14.85" fontSize="10" wrappingAllowedY="true" width="494" tickCounterLabel="ticks" maxPycor="16" updateMode="0" maxPxcor="16" minPxcor="-16"></view>
+    <chooser x="20" y="20" height="60" variable="scenario-mode" current="1" width="295" display="scenario-mode">
+      <choice type="string" value="FAIL OPEN"></choice>
+      <choice type="string" value="BALANCED"></choice>
+      <choice type="string" value="RESILIENT BY DESIGN"></choice>
+    </chooser>
+    <button x="21" y="89" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="140" display="NOVO EXPERIMENTO">setup</button>
+    <button x="166" y="136" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="145" display="Executar 2026-2030">run-to-2030</button>
+    <button x="20" y="181" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="140" display="COMPARAR CENÁRIOS">compare-scenarios</button>
+    <button x="21" y="135" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="140" display="Executar 1 mês">go</button>
+    <button x="170" y="89" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="140" display="Executar ">go</button>
+    <slider x="20" step="1" y="235" max="500" width="290" display="num-municipalities" height="50" min="10" direction="Horizontal" default="100.0" variable="num-municipalities"></slider>
+    <slider x="20" step="1" y="688" max="100" width="290" display="cascade-sensitivity" height="50" min="0" direction="Horizontal" default="40.0" variable="cascade-sensitivity"></slider>
+    <slider x="20" step="1" y="629" max="10" width="290" display="network-density" height="50" min="0" direction="Horizontal" default="6.0" variable="network-density"></slider>
+    <slider x="20" step="1" y="573" max="100" width="290" display="infrastructure-resilience" height="50" min="0" direction="Horizontal" default="45.0" variable="infrastructure-resilience"></slider>
+    <slider x="20" step="1" y="516" max="100" width="290" display="adaptation-investment" height="50" min="0" direction="Horizontal" default="35.0" variable="adaptation-investment"></slider>
+    <slider x="20" step="1" y="459" max="100" width="290" display="urban-pressure" height="50" min="0" direction="Horizontal" default="55.0" variable="urban-pressure"></slider>
+    <slider x="20" step="1" y="402" max="100" width="290" display="deforestation-pressure" height="50" min="0" direction="Horizontal" default="35.0" variable="deforestation-pressure"></slider>
+    <slider x="20" step="1" y="346" max="100" width="290" display="el-nino-intensity" height="50" min="0" direction="Horizontal" default="55.0" variable="el-nino-intensity"></slider>
+    <slider x="20" step="1" y="292" max="100" width="290" display="warming-pressure" height="50" min="0" direction="Horizontal" default="60.0" variable="warming-pressure"></slider>
+    <button x="167" y="182" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="145" display="Imprimir Resumo">print-summary</button>
+    <monitor x="335" precision="17" y="600" height="60" fontSize="12" width="150" display="Ano Atual: ">current-year</monitor>
+    <monitor x="491" precision="17" y="600" height="60" fontSize="12" width="150" display="Risco Sistêmico: ">precision system-risk 2</monitor>
+    <monitor x="335" precision="17" y="667" height="60" fontSize="12" width="150" display="Eventos em Cascata: ">cascade-events</monitor>
+    <monitor x="492" precision="17" y="667" height="60" fontSize="12" width="150" display="Estresse Hídrico Médio: ">precision average-water-stress 2</monitor>
+    <monitor x="805" precision="17" y="600" height="60" fontSize="12" width="150" display="Pico de Risco: ">precision peak-system-risk 2</monitor>
+    <monitor x="807" precision="17" y="667" height="60" fontSize="12" width="150" display="Pico de Dano: ">precision peak-average-damage 2</monitor>
+    <monitor x="650" precision="17" y="668" height="60" fontSize="12" width="150" display="Impacto Agrícola Médio: ">precision average-agricultural-impact 2</monitor>
+    <monitor x="648" precision="17" y="601" height="60" fontSize="12" width="150" display="Municípios Críticos: ">critical-municipalities</monitor>
+    <button x="690" y="30" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="161" display=" EXECUTAR REPLICAÇÕES">replication-test replication-count</button>
+    <plot x="900" autoPlotX="true" yMax="100.0" autoPlotY="true" yAxis="Índice" y="335" xMin="0.0" height="250" legend="true" xMax="60.0" yMin="0.0" width="505" xAxis="Meses" display="Evolução Temporal do Risco e Danos">
+      <setup></setup>
+      <update></update>
+      <pen interval="1.0" mode="0" display="Risco Sistêmico" color="-2674135" legend="true">
+        <setup></setup>
+        <update>plot system-risk</update>
+      </pen>
+      <pen interval="1.0" mode="0" display="Dano Médio" color="-16777216" legend="true">
+        <setup></setup>
+        <update>plot average-damage</update>
+      </pen>
+    </plot>
+    <plot x="900" autoPlotX="true" yMax="100.0" autoPlotY="true" yAxis="Impacto (%)" y="66" xMin="0.0" height="250" legend="true" xMax="60.0" yMin="0.0" width="505" xAxis="Meses" display="Estresse Setorial Cruzado">
+      <setup></setup>
+      <update></update>
+      <pen interval="1.0" mode="0" display="Estresse Hídrico" color="-13345367" legend="true">
+        <setup></setup>
+        <update>plot average-water-stress</update>
+      </pen>
+      <pen interval="1.0" mode="0" display="Impacto Agrícola" color="-10899396" legend="true">
+        <setup></setup>
+        <update>plot average-agricultural-impact</update>
+      </pen>
+      <pen interval="1.0" mode="0" display="Estresse Energético" color="-955883" legend="true">
+        <setup></setup>
+        <update>plot average-energy-stress</update>
+      </pen>
+      <pen interval="1.0" mode="0" display="Impacto Econômico" color="-5825686" legend="true">
+        <setup></setup>
+        <update>plot average-economic-impact</update>
+      </pen>
+    </plot>
+    <slider x="415" step="10" y="20" max="100" width="255" display="replication-count" height="60" min="10" direction="Horizontal" default="30.0" variable="replication-count"></slider>
+  </widgets>
+  <info><![CDATA[
+# CLIMATE STRESS TEST — BRAZIL 2026–2030
+
+## Versão 2.0 — Reprodutibilidade e verificação numérica
+
+Este modelo é um **Agent-Based Model (ABM) exploratório** destinado a testar hipóteses sobre vulnerabilidade sistêmica, estresse setorial e propagação de cascatas entre municípios abstratos.
+
+**Não é uma previsão oficial do clima brasileiro e não deve ser interpretado como tal.**
+
+### Principais mudanças da versão 2.0
+
+- Inclusão de `random-seed` para resultados reproduzíveis.
+- Redução da saturação do `hazard`.
+- Redução da amplitude da sazonalidade.
+- Redução do crescimento temporal artificial.
+- Distribuições iniciais sintéticas mais estreitas.
+- Redução do ganho mensal de adaptação e infraestrutura.
+- Recuperação mais gradual.
+- Memória de cascata com decaimento.
+- Limiares de cascata ligeiramente mais altos.
+- Inclusão de pico de risco e pico de dano.
+- Inclusão de procedimento `replication-test`.
+
+### Parâmetros baseline
+
+| Variável | Baseline |
+|---|---:|
+| Municípios | 100 |
+| Warming pressure | 60 |
+| El Niño intensity | 55 |
+| Deforestation pressure | 35 |
+| Urban pressure | 55 |
+| Adaptation investment | 35 |
+| Infrastructure resilience | 45 |
+| Network density | 6 |
+| Cascade sensitivity | 40 |
+
+Os valores `0–100` são **escalas normalizadas do modelo**. Não representam diretamente °C, percentuais observados, probabilidade estatística ou índices climáticos oficiais.
+
+## Reprodutibilidade
+
+O `setup` utiliza:
+
+`random-seed 20260916`
+
+Assim, com os mesmos parâmetros e mesma versão do NetLogo, a sequência estocástica do modelo pode ser reproduzida.
+
+Para replicações independentes:
+
+`replication-test 30`
+
+O procedimento executa 30 corridas com seeds diferentes e imprime no Command Center:
+
+- seed;
+- risco sistêmico final;
+- pico de risco sistêmico;
+- dano médio final.
+
+Isso permite avaliar sensibilidade à aleatoriedade.
+
+## Escalas
+
+- 1 tick = 1 mês.
+- 60 ticks = 5 anos.
+- Horizonte experimental = 2026–2030.
+- Espaço = grade 2D abstrata com cinco faixas regionais.
+- Municípios = agentes sintéticos.
+
+## Estrutura
+
+### Agentes
+
+Cada município possui:
+
+- exposição;
+- vulnerabilidade;
+- resiliência;
+- sensibilidade hídrica;
+- sensibilidade agrícola;
+- sensibilidade urbana;
+- sensibilidade ao calor;
+- hazard;
+- estresse hídrico;
+- impacto agrícola;
+- estresse energético;
+- impacto econômico;
+- carga de cascata;
+- risco local;
+- dano;
+- capacidade de recuperação.
+
+### Rede
+
+`dependencies` representa dependências intermunicipais abstratas.
+
+A rede não representa o mapa real de fluxos comerciais, elétricos ou hídricos. Uma futura versão empírica deverá usar dados direcionais observados.
+
+## Formulação
+
+### Hazard
+
+Os pesos atuais são:
+
+- aquecimento: 0,45
+- El Niño: 0,20
+- desmatamento: 0,20
+- pressão urbana: 0,15
+
+A sazonalidade varia aproximadamente ±10%.
+
+O crescimento temporal imposto pelo modelo é pequeno e serve apenas como tendência experimental.
+
+### Risco local
+
+`RawRisk = Hazard × Exposure × Vulnerability / 10000`
+
+O risco líquido é reduzido por:
+
+- resiliência;
+- infraestrutura efetiva;
+- adaptação efetiva.
+
+### Cascatas
+
+O spillover depende de:
+
+- risco médio dos vizinhos;
+- densidade de rede;
+- sensibilidade de cascata.
+
+A carga de cascata apresenta memória e decai a cada tick, em vez de somente acumular.
+
+### Dano e recuperação
+
+O dano combina:
+
+- risco local;
+- impacto econômico;
+- carga de cascata.
+
+A recuperação depende da capacidade combinada de:
+
+- resiliência;
+- infraestrutura;
+- adaptação.
+
+## Verificação recomendada
+
+Uma análise robusta deve executar múltiplas replicações do mesmo experimento.
+
+Exemplo:
+
+`replication-test 30`
+
+Para comparação de cenários, mantenha constantes:
+
+- número de municípios;
+- seed inicial;
+- pressões climáticas;
+- densidade de rede.
+
+Altere somente o cenário ou uma variável de interesse.
+
+Uma forma adequada de apresentar resultados é:
+
+- média;
+- mediana;
+- desvio-padrão;
+- mínimo/máximo;
+- intervalo entre replicações.
+
+Não trate uma única execução como evidência estatística.
+
+## Extensão para calibração empírica
+
+A próxima evolução metodológica seria substituir parâmetros sintéticos por dados observacionais.
+
+Possíveis fontes incluem dados municipais do IBGE, dados climáticos e de monitoramento do INPE/CPTEC, ANA, MapBiomas e outras bases oficiais ou acadêmicas.
+
+A integração deverá preservar separadamente:
+
+1. dado observado;
+2. transformação/normalização;
+3. parâmetro do modelo;
+4. hipótese causal.
+
+## Interpretação
+
+O modelo é adequado para perguntas como:
+
+> "Sob determinadas hipóteses, como mudanças na infraestrutura, adaptação e conectividade alteram a dinâmica sistêmica?"
+
+Ele não é adequado, em sua forma atual, para perguntas como:
+
+> "Qual será exatamente o risco de um determinado município em 2030?"
+
+Para responder à segunda pergunta seria necessária calibração municipal, dados históricos, séries temporais, validação fora da amostra e incerteza estatística.
+
+## Controles
+
+- `setup`: cria os agentes e a rede.
+- `go`: avança um mês.
+- `stop`: interrompe a execução.
+- `run-to-2030`: executa 60 meses.
+- `scenario-fail-open`: adaptação e infraestrutura com eficiência de 55%.
+- `scenario-balanced`: eficiência nominal.
+- `scenario-resilient`: eficiência de até 130%.
+- `print-summary`: imprime as métricas.
+- `replication-test N`: executa N replicações.
+
+## Estados visuais
+
+- verde = STABLE
+- amarelo = WARNING
+- laranja = HIGH
+- vermelho = CRITICAL
+
+## Limitações importantes
+
+Este modelo ainda utiliza:
+
+- municípios sintéticos;
+- espacialização abstrata;
+- rede aleatória;
+- sensibilidades artificiais;
+- parâmetros não calibrados empiricamente;
+- hazard normalizado.
+
+Portanto, os resultados devem ser apresentados como **stress tests e exploração de hipóteses**, e não como previsão climática ou previsão socioeconômica do Brasil.
+
+## Próxima versão recomendada
+
+A versão 3.x pode incorporar:
+
+- GIS municipal real;
+- dados históricos;
+- séries mensais observadas;
+- rede direcionada;
+- calibração por região;
+- análise Monte Carlo;
+- intervalos de incerteza;
+- validação contra eventos históricos;
+- métricas de erro e ajuste;
+- exportação CSV.
+
+
+
+---
+
+## VISÃO GERAL DO PROCESSO
+
+Em cada tick (um mês), o modelo executa a seguinte sequência:
+
+1. `configure-scenario` — aplica a efetividade do cenário selecionado.
+2. `update-local-hazard` — calcula a pressão climática local.
+3. `calculate-local-risk` — calcula o risco local líquido.
+4. `update-sector-impacts` — atualiza água, agricultura, energia e economia.
+5. `propagate-cascades` — propaga risco pela rede e verifica gatilhos intersetoriais.
+6. `apply-adaptation` — aplica ganhos mensais de adaptação e infraestrutura.
+7. `apply-recovery` — acumula dano e aplica recuperação.
+8. `calculate-all-metrics` — atualiza os indicadores globais.
+9. `update-visuals` — atualiza agentes, links e ambiente.
+
+## EQUAÇÕES PRINCIPAIS
+
+### Hazard
+
+Os pesos vigentes da versão atual são:
+
+- aquecimento: **0,45**
+- El Niño: **0,20**
+- desmatamento: **0,20**
+- pressão urbana: **0,15**
+
+A formulação simplificada é:
+
+`Base = 0.45 × Warming + 0.20 × ElNiño + 0.20 × Deforestation + 0.15 × Urban`
+
+Depois são aplicados fator regional, tendência temporal, sazonalidade e variabilidade aleatória, com limitação final entre `0` e `100`.
+
+### Risco local
+
+`RawRisk = Hazard × Exposure × Vulnerability / 10000`
+
+`LocalRisk = RawRisk − 0.35 × Resilience − 0.20 × Infrastructure − 0.15 × Adaptation`
+
+O risco final é limitado entre `0` e `100`.
+
+### Cascata
+
+`Spillover = (NeighborRisk × NetworkDensity × 0.01) × (CascadeSensitivity × 0.01)`
+
+A carga de cascata possui memória com decaimento aproximado de `8%` por mês antes da nova entrada de spillover.
+
+### Dano
+
+`IncomingDamage = 0.55 × LocalRisk + 0.20 × EconomicImpact + 0.25 × CascadeLoad`
+
+`Recovery = 0.020 × RecoveryCapacity`
+
+`Damage(t) = Damage(t−1) + 0.35 × IncomingDamage − Recovery`
+
+## O QUE É IMPORTANTE OBSERVAR
+
+### Pontos de inflexão
+
+Observe se o risco cresce de forma não linear quando vários fatores se combinam, especialmente hazard elevado, vulnerabilidade, conectividade da rede e sensibilidade a cascatas. Esse comportamento é uma propriedade emergente do modelo e não deve ser interpretado automaticamente como um ponto de não retorno real.
+
+### Diferenças regionais
+
+O modelo aplica fatores estilizados às cinco regiões para produzir heterogeneidade espacial. O objetivo é investigar diferenças de comportamento entre agentes, não reproduzir diretamente os limites ou indicadores reais de cada região.
+
+### Cascatas
+
+A combinação de alta `network-density` com alta `cascade-sensitivity` aumenta o potencial de propagação do risco entre municípios conectados.
+
+## EXPERIMENTOS SUGERIDOS
+
+### Comparação entre cenários
+
+Mantenha os sliders climáticos constantes e execute:
+
+- `FAIL OPEN`
+- `BALANCED`
+- `RESILIENT BY DESIGN`
+
+Compare risco final, pico de risco, dano final, pico de dano, municípios críticos e carga de cascata.
+
+### Teste de estresse climático
+
+Eleve `warming-pressure` e `el-nino-intensity` e reduza a capacidade de adaptação. O objetivo é observar como a estrutura do modelo reage à intensificação controlada dos inputs.
+
+### Isolamento versus integração
+
+Compare `network-density = 1` com `network-density = 10`, mantendo os demais parâmetros constantes.
+
+### Robustez estocástica
+
+Use `replication-test 30` para verificar quanto os resultados variam entre diferentes seeds.
+
+## COMO INTERPRETAR A SAÍDA
+
+`system-risk` representa a média do risco local dos agentes.
+
+`critical-municipalities` conta municípios com `local-risk >= 75` ou `damage >= 75`.
+
+`cascade-events` contabiliza ativações dos gatilhos de cascata no tick atual; não representa número de desastres reais.
+
+`peak-system-risk` e `peak-average-damage` registram os maiores valores observados durante a execução corrente.
+
+Nenhum desses indicadores deve ser lido como probabilidade observada ou previsão oficial.
+
+## CONTROLES E VISUALIZAÇÕES
+
+### Botões
+
+- `setup` — inicializa o experimento.
+- `go` / `stop` — inicia ou interrompe a simulação mensal.
+- `run-to-2030` — executa os 60 meses.
+- `scenario-fail-open` — ativa FAIL OPEN.
+- `scenario-balanced` — ativa BALANCED.
+- `scenario-resilient` — ativa RESILIENT BY DESIGN.
+- `print-summary` — envia as métricas atuais ao Command Center.
+
+### Sliders
+
+- `num-municipalities`: 10–500.
+- `warming-pressure`: 0–100.
+- `el-nino-intensity`: 0–100.
+- `deforestation-pressure`: 0–100.
+- `urban-pressure`: 0–100.
+- `adaptation-investment`: 0–100.
+- `infrastructure-resilience`: 0–100.
+- `network-density`: 0–10.
+- `cascade-sensitivity`: 0–100.
+
+### Monitores
+
+A interface acompanha ano, risco sistêmico, municípios críticos, eventos em cascata, estresse hídrico, impacto agrícola, pico de risco e pico de dano.
+
+### Gráficos
+
+**Evolução Temporal do Risco e Danos:** compara risco sistêmico e dano médio.
+
+**Estresse Setorial Cruzado:** compara água, agricultura, energia e economia.
+
+## REPRODUTIBILIDADE E VERIFICAÇÃO
+
+O modelo usa uma seed inicial fixa (`20260916`) no `setup`, permitindo reproduzir uma execução específica com os mesmos parâmetros e ambiente computacional.
+
+Para análise de robustez, `replication-test N` altera a seed entre corridas e imprime resultados resumidos no Command Center.
+
+Uma boa prática é registrar, para cada experimento:
+
+- versão do modelo;
+- versão do NetLogo;
+- parâmetros dos sliders;
+- seed;
+- número de agentes;
+- métricas finais;
+- picos observados.
+
+A recomendação metodológica é separar claramente:
+
+1. **dados observados**;
+2. **normalização ou transformação dos dados**;
+3. **parâmetros do modelo**;
+4. **hipóteses assumidas**.
+
+## EXTENSÕES FUTURAS
+
+### Integração GIS
+
+Substituir as faixas abstratas por limites municipais reais utilizando a extensão `GIS` do NetLogo.
+
+### Calibração empírica
+
+Substituir as sensibilidades sintéticas por indicadores observacionais e séries históricas de fontes apropriadas, mantendo rastreabilidade entre dado, transformação e parâmetro.
+
+### Rede direcional
+
+Transformar `dependencies` em fluxos direcionais para representar separadamente água, energia, alimentos, logística e cadeias de suprimentos.
+
+### Alocação dinâmica
+
+Permitir que os agentes alterem investimentos de adaptação em resposta ao dano e ao risco observados.
+
+### Monte Carlo e validação
+
+Automatizar replicações, intervalos de incerteza, análise de sensibilidade e validação contra eventos históricos.
+
+## FUNCIONALIDADES DO NETLOGO UTILIZADAS
+
+- divisão espacial por `pxcor`;
+- criação de agentes com `breed`;
+- rede com `undirected-link-breed`;
+- `link-neighbors` para propagação topológica;
+- `mean [local-risk] of link-neighbors`;
+- sazonalidade trigonométrica com `sin`;
+- `random-seed` para reprodutibilidade;
+- métricas agregadas com `mean`, `count` e `sum`;
+- visualização dinâmica por estado de risco.
+
+## MODELOS RELACIONADOS
+
+Os conceitos utilizados têm relação metodológica com modelos de:
+
+- transmissão em redes e epidemias;
+- falhas em cascata de redes de infraestrutura;
+- sistemas complexos;
+- modelos de uso do solo e recursos;
+- abordagens de nexo Água–Energia–Alimentos.
+
+## REFERÊNCIAS METODOLÓGICAS E CRÉDITOS
+
+- **Grimm et al. (2006, 2010)** — ODD Protocol e sua atualização metodológica para descrição e replicabilidade de modelos baseados em agentes.
+- Conceitos de **Agent-Based Modeling**, **Complex Network Theory**, **Water–Energy–Food Nexus**, **climate risk stress testing** e **cascading failures**.
+
+Este modelo foi concebido como um ambiente experimental para análise de hipóteses. A versão atual prioriza reprodutibilidade e comportamento controlado; uma versão empiricamente calibrada exigirá dados observacionais, validação e quantificação explícita das incertezas.
+]]></info>
+  <turtleShapes>
+    <shape name="default" rotatable="true" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="5"></point>
+        <point x="40" y="250"></point>
+        <point x="150" y="205"></point>
+        <point x="260" y="250"></point>
+      </polygon>
+    </shape>
+    <shape name="airplane" rotatable="true" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="0"></point>
+        <point x="135" y="15"></point>
+        <point x="120" y="60"></point>
+        <point x="120" y="105"></point>
+        <point x="15" y="165"></point>
+        <point x="15" y="195"></point>
+        <point x="120" y="180"></point>
+        <point x="135" y="240"></point>
+        <point x="105" y="270"></point>
+        <point x="120" y="285"></point>
+        <point x="150" y="270"></point>
+        <point x="180" y="285"></point>
+        <point x="210" y="270"></point>
+        <point x="165" y="240"></point>
+        <point x="180" y="180"></point>
+        <point x="285" y="195"></point>
+        <point x="285" y="165"></point>
+        <point x="180" y="105"></point>
+        <point x="180" y="60"></point>
+        <point x="165" y="15"></point>
+      </polygon>
+    </shape>
+    <shape name="arrow" rotatable="true" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="0"></point>
+        <point x="0" y="150"></point>
+        <point x="105" y="150"></point>
+        <point x="105" y="293"></point>
+        <point x="195" y="293"></point>
+        <point x="195" y="150"></point>
+        <point x="300" y="150"></point>
+      </polygon>
+    </shape>
+    <shape name="box" rotatable="false" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="285"></point>
+        <point x="285" y="225"></point>
+        <point x="285" y="75"></point>
+        <point x="150" y="135"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="135"></point>
+        <point x="15" y="75"></point>
+        <point x="150" y="15"></point>
+        <point x="285" y="75"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="15" y="75"></point>
+        <point x="15" y="225"></point>
+        <point x="150" y="285"></point>
+        <point x="150" y="135"></point>
+      </polygon>
+      <line endX="150" startY="285" marked="false" color="255" endY="135" startX="150"></line>
+      <line endX="15" startY="135" marked="false" color="255" endY="75" startX="150"></line>
+      <line endX="285" startY="135" marked="false" color="255" endY="75" startX="150"></line>
+    </shape>
+    <shape name="bug" rotatable="true" editableColorIndex="0">
+      <circle x="96" y="182" marked="true" color="-1920102913" diameter="108" filled="true"></circle>
+      <circle x="110" y="127" marked="true" color="-1920102913" diameter="80" filled="true"></circle>
+      <circle x="110" y="75" marked="true" color="-1920102913" diameter="80" filled="true"></circle>
+      <line endX="80" startY="100" marked="true" color="-1920102913" endY="30" startX="150"></line>
+      <line endX="220" startY="100" marked="true" color="-1920102913" endY="30" startX="150"></line>
+    </shape>
+    <shape name="butterfly" rotatable="true" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="165"></point>
+        <point x="209" y="199"></point>
+        <point x="225" y="225"></point>
+        <point x="225" y="255"></point>
+        <point x="195" y="270"></point>
+        <point x="165" y="255"></point>
+        <point x="150" y="240"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="165"></point>
+        <point x="89" y="198"></point>
+        <point x="75" y="225"></point>
+        <point x="75" y="255"></point>
+        <point x="105" y="270"></point>
+        <point x="135" y="255"></point>
+        <point x="150" y="240"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="139" y="148"></point>
+        <point x="100" y="105"></point>
+        <point x="55" y="90"></point>
+        <point x="25" y="90"></point>
+        <point x="10" y="105"></point>
+        <point x="10" y="135"></point>
+        <point x="25" y="180"></point>
+        <point x="40" y="195"></point>
+        <point x="85" y="194"></point>
+        <point x="139" y="163"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="162" y="150"></point>
+        <point x="200" y="105"></point>
+        <point x="245" y="90"></point>
+        <point x="275" y="90"></point>
+        <point x="290" y="105"></point>
+        <point x="290" y="135"></point>
+        <point x="275" y="180"></point>
+        <point x="260" y="195"></point>
+        <point x="215" y="195"></point>
+        <point x="162" y="165"></point>
+      </polygon>
+      <polygon color="255" filled="true" marked="false">
+        <point x="150" y="255"></point>
+        <point x="135" y="225"></point>
+        <point x="120" y="150"></point>
+        <point x="135" y="120"></point>
+        <point x="150" y="105"></point>
+        <point x="165" y="120"></point>
+        <point x="180" y="150"></point>
+        <point x="165" y="225"></point>
+      </polygon>
+      <circle x="135" y="90" marked="false" color="255" diameter="30" filled="true"></circle>
+      <line endX="195" startY="105" marked="false" color="255" endY="60" startX="150"></line>
+      <line endX="105" startY="105" marked="false" color="255" endY="60" startX="150"></line>
+    </shape>
+    <shape name="car" rotatable="false" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="300" y="180"></point>
+        <point x="279" y="164"></point>
+        <point x="261" y="144"></point>
+        <point x="240" y="135"></point>
+        <point x="226" y="132"></point>
+        <point x="213" y="106"></point>
+        <point x="203" y="84"></point>
+        <point x="185" y="63"></point>
+        <point x="159" y="50"></point>
+        <point x="135" y="50"></point>
+        <point x="75" y="60"></point>
+        <point x="0" y="150"></point>
+        <point x="0" y="165"></point>
+        <point x="0" y="225"></point>
+        <point x="300" y="225"></point>
+        <point x="300" y="180"></point>
+      </polygon>
+      <circle x="180" y="180" marked="false" color="255" diameter="90" filled="true"></circle>
+      <circle x="30" y="180" marked="false" color="255" diameter="90" filled="true"></circle>
+      <polygon color="255" filled="true" marked="false">
+        <point x="162" y="80"></point>
+        <point x="132" y="78"></point>
+        <point x="134" y="135"></point>
+        <point x="209" y="135"></point>
+        <point x="194" y="105"></point>
+        <point x="189" y="96"></point>
+        <point x="180" y="89"></point>
+      </polygon>
+      <circle x="47" y="195" marked="true" color="-1920102913" diameter="58" filled="true"></circle>
+      <circle x="195" y="195" marked="true" color="-1920102913" diameter="58" filled="true"></circle>
+    </shape>
+    <shape name="circle" rotatable="false" editableColorIndex="0">
+      <circle x="0" y="0" marked="true" color="-1920102913" diameter="300" filled="true"></circle>
+    </shape>
+    <shape name="circle 2" rotatable="false" editableColorIndex="0">
+      <circle x="0" y="0" marked="true" color="-1920102913" diameter="300" filled="true"></circle>
+      <circle x="30" y="30" marked="false" color="255" diameter="240" filled="true"></circle>
+    </shape>
+    <shape name="cow" rotatable="false" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="200" y="193"></point>
+        <point x="197" y="249"></point>
+        <point x="179" y="249"></point>
+        <point x="177" y="196"></point>
+        <point x="166" y="187"></point>
+        <point x="140" y="189"></point>
+        <point x="93" y="191"></point>
+        <point x="78" y="179"></point>
+        <point x="72" y="211"></point>
+        <point x="49" y="209"></point>
+        <point x="48" y="181"></point>
+        <point x="37" y="149"></point>
+        <point x="25" y="120"></point>
+        <point x="25" y="89"></point>
+        <point x="45" y="72"></point>
+        <point x="103" y="84"></point>
+        <point x="179" y="75"></point>
+        <point x="198" y="76"></point>
+        <point x="252" y="64"></point>
+        <point x="272" y="81"></point>
+        <point x="293" y="103"></point>
+        <point x="285" y="121"></point>
+        <point x="255" y="121"></point>
+        <point x="242" y="118"></point>
+        <point x="224" y="167"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="73" y="210"></point>
+        <point x="86" y="251"></point>
+        <point x="62" y="249"></point>
+        <point x="48" y="208"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="25" y="114"></point>
+        <point x="16" y="195"></point>
+        <point x="9" y="204"></point>
+        <point x="23" y="213"></point>
+        <point x="25" y="200"></point>
+        <point x="39" y="123"></point>
+      </polygon>
+    </shape>
+    <shape name="cylinder" rotatable="false" editableColorIndex="0">
+      <circle x="0" y="0" marked="true" color="-1920102913" diameter="300" filled="true"></circle>
+    </shape>
+    <shape name="dot" rotatable="false" editableColorIndex="0">
+      <circle x="90" y="90" marked="true" color="-1920102913" diameter="120" filled="true"></circle>
+    </shape>
+    <shape name="face happy" rotatable="false" editableColorIndex="0">
+      <circle x="8" y="8" marked="true" color="-1920102913" diameter="285" filled="true"></circle>
+      <circle x="60" y="75" marked="false" color="255" diameter="60" filled="true"></circle>
+      <circle x="180" y="75" marked="false" color="255" diameter="60" filled="true"></circle>
+      <polygon color="255" filled="true" marked="false">
+        <point x="150" y="255"></point>
+        <point x="90" y="239"></point>
+        <point x="62" y="213"></point>
+        <point x="47" y="191"></point>
+        <point x="67" y="179"></point>
+        <point x="90" y="203"></point>
+        <point x="109" y="218"></point>
+        <point x="150" y="225"></point>
+        <point x="192" y="218"></point>
+        <point x="210" y="203"></point>
+        <point x="227" y="181"></point>
+        <point x="251" y="194"></point>
+        <point x="236" y="217"></point>
+        <point x="212" y="240"></point>
+      </polygon>
+    </shape>
+    <shape name="face neutral" rotatable="false" editableColorIndex="0">
+      <circle x="8" y="7" marked="true" color="-1920102913" diameter="285" filled="true"></circle>
+      <circle x="60" y="75" marked="false" color="255" diameter="60" filled="true"></circle>
+      <circle x="180" y="75" marked="false" color="255" diameter="60" filled="true"></circle>
+      <rectangle endX="240" startY="195" marked="false" color="255" endY="225" startX="60" filled="true"></rectangle>
+    </shape>
+    <shape name="face sad" rotatable="false" editableColorIndex="0">
+      <circle x="8" y="8" marked="true" color="-1920102913" diameter="285" filled="true"></circle>
+      <circle x="60" y="75" marked="false" color="255" diameter="60" filled="true"></circle>
+      <circle x="180" y="75" marked="false" color="255" diameter="60" filled="true"></circle>
+      <polygon color="255" filled="true" marked="false">
+        <point x="150" y="168"></point>
+        <point x="90" y="184"></point>
+        <point x="62" y="210"></point>
+        <point x="47" y="232"></point>
+        <point x="67" y="244"></point>
+        <point x="90" y="220"></point>
+        <point x="109" y="205"></point>
+        <point x="150" y="198"></point>
+        <point x="192" y="205"></point>
+        <point x="210" y="220"></point>
+        <point x="227" y="242"></point>
+        <point x="251" y="229"></point>
+        <point x="236" y="206"></point>
+        <point x="212" y="183"></point>
+      </polygon>
+    </shape>
+    <shape name="fish" rotatable="false" editableColorIndex="0">
+      <polygon color="-1" filled="true" marked="false">
+        <point x="44" y="131"></point>
+        <point x="21" y="87"></point>
+        <point x="15" y="86"></point>
+        <point x="0" y="120"></point>
+        <point x="15" y="150"></point>
+        <point x="0" y="180"></point>
+        <point x="13" y="214"></point>
+        <point x="20" y="212"></point>
+        <point x="45" y="166"></point>
+      </polygon>
+      <polygon color="-1" filled="true" marked="false">
+        <point x="135" y="195"></point>
+        <point x="119" y="235"></point>
+        <point x="95" y="218"></point>
+        <point x="76" y="210"></point>
+        <point x="46" y="204"></point>
+        <point x="60" y="165"></point>
+      </polygon>
+      <polygon color="-1" filled="true" marked="false">
+        <point x="75" y="45"></point>
+        <point x="83" y="77"></point>
+        <point x="71" y="103"></point>
+        <point x="86" y="114"></point>
+        <point x="166" y="78"></point>
+        <point x="135" y="60"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="30" y="136"></point>
+        <point x="151" y="77"></point>
+        <point x="226" y="81"></point>
+        <point x="280" y="119"></point>
+        <point x="292" y="146"></point>
+        <point x="292" y="160"></point>
+        <point x="287" y="170"></point>
+        <point x="270" y="195"></point>
+        <point x="195" y="210"></point>
+        <point x="151" y="212"></point>
+        <point x="30" y="166"></point>
+      </polygon>
+      <circle x="215" y="106" marked="false" color="255" diameter="30" filled="true"></circle>
+    </shape>
+    <shape name="flag" rotatable="false" editableColorIndex="0">
+      <rectangle endX="75" startY="15" marked="true" color="-1920102913" endY="300" startX="60" filled="true"></rectangle>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="90" y="150"></point>
+        <point x="270" y="90"></point>
+        <point x="90" y="30"></point>
+      </polygon>
+      <line endX="90" startY="135" marked="true" color="-1920102913" endY="135" startX="75"></line>
+      <line endX="90" startY="45" marked="true" color="-1920102913" endY="45" startX="75"></line>
+    </shape>
+    <shape name="flower" rotatable="false" editableColorIndex="0">
+      <polygon color="1504722175" filled="true" marked="false">
+        <point x="135" y="120"></point>
+        <point x="165" y="165"></point>
+        <point x="180" y="210"></point>
+        <point x="180" y="240"></point>
+        <point x="150" y="300"></point>
+        <point x="165" y="300"></point>
+        <point x="195" y="240"></point>
+        <point x="195" y="195"></point>
+        <point x="165" y="135"></point>
+      </polygon>
+      <circle x="85" y="132" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="130" y="147" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="192" y="85" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="85" y="40" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="177" y="40" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="177" y="132" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="70" y="85" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="130" y="25" marked="true" color="-1920102913" diameter="38" filled="true"></circle>
+      <circle x="96" y="51" marked="true" color="-1920102913" diameter="108" filled="true"></circle>
+      <circle x="113" y="68" marked="false" color="255" diameter="74" filled="true"></circle>
+      <polygon color="1504722175" filled="true" marked="false">
+        <point x="189" y="233"></point>
+        <point x="219" y="188"></point>
+        <point x="249" y="173"></point>
+        <point x="279" y="188"></point>
+        <point x="234" y="218"></point>
+      </polygon>
+      <polygon color="1504722175" filled="true" marked="false">
+        <point x="180" y="255"></point>
+        <point x="150" y="210"></point>
+        <point x="105" y="210"></point>
+        <point x="75" y="240"></point>
+        <point x="135" y="240"></point>
+      </polygon>
+    </shape>
+    <shape name="house" rotatable="false" editableColorIndex="0">
+      <rectangle endX="255" startY="120" marked="true" color="-1920102913" endY="285" startX="45" filled="true"></rectangle>
+      <rectangle endX="180" startY="210" marked="false" color="255" endY="285" startX="120" filled="true"></rectangle>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="15" y="120"></point>
+        <point x="150" y="15"></point>
+        <point x="285" y="120"></point>
+      </polygon>
+      <line endX="270" startY="120" marked="false" color="255" endY="120" startX="30"></line>
+    </shape>
+    <shape name="leaf" rotatable="false" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="210"></point>
+        <point x="135" y="195"></point>
+        <point x="120" y="210"></point>
+        <point x="60" y="210"></point>
+        <point x="30" y="195"></point>
+        <point x="60" y="180"></point>
+        <point x="60" y="165"></point>
+        <point x="15" y="135"></point>
+        <point x="30" y="120"></point>
+        <point x="15" y="105"></point>
+        <point x="40" y="104"></point>
+        <point x="45" y="90"></point>
+        <point x="60" y="90"></point>
+        <point x="90" y="105"></point>
+        <point x="105" y="120"></point>
+        <point x="120" y="120"></point>
+        <point x="105" y="60"></point>
+        <point x="120" y="60"></point>
+        <point x="135" y="30"></point>
+        <point x="150" y="15"></point>
+        <point x="165" y="30"></point>
+        <point x="180" y="60"></point>
+        <point x="195" y="60"></point>
+        <point x="180" y="120"></point>
+        <point x="195" y="120"></point>
+        <point x="210" y="105"></point>
+        <point x="240" y="90"></point>
+        <point x="255" y="90"></point>
+        <point x="263" y="104"></point>
+        <point x="285" y="105"></point>
+        <point x="270" y="120"></point>
+        <point x="285" y="135"></point>
+        <point x="240" y="165"></point>
+        <point x="240" y="180"></point>
+        <point x="270" y="195"></point>
+        <point x="240" y="210"></point>
+        <point x="180" y="210"></point>
+        <point x="165" y="195"></point>
+      </polygon>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="135" y="195"></point>
+        <point x="135" y="240"></point>
+        <point x="120" y="255"></point>
+        <point x="105" y="255"></point>
+        <point x="105" y="285"></point>
+        <point x="135" y="285"></point>
+        <point x="165" y="240"></point>
+        <point x="165" y="195"></point>
+      </polygon>
+    </shape>
+    <shape name="line" rotatable="true" editableColorIndex="0">
+      <line endX="150" startY="0" marked="true" color="-1920102913" endY="300" startX="150"></line>
+    </shape>
+    <shape name="line half" rotatable="true" editableColorIndex="0">
+      <line endX="150" startY="0" marked="true" color="-1920102913" endY="150" startX="150"></line>
+    </shape>
+    <shape name="pentagon" rotatable="false" editableColorIndex="0">
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="150" y="15"></point>
+        <point x="15" y="120"></point>
+        <point x="60" y="285"></point>
+        <point x="240" y="285"></point>
+        <point x="285" y="120"></point>
+      </polygon>
+    </shape>
+    <shape name="person" rotatable="false" editableColorIndex="0">
+      <circle x="110" y="5" marked="true" color="-1920102913" diameter="80" filled="true"></circle>
+      <polygon color="-1920102913" filled="true" marked="true">
+        <point x="105" y="90"></point>
+        <point x="195" y="90"></point>
+        <point x="210" y="210"></point>
+        <point x="165" y="210"></point>
+        <point x="165" y="285"></point>
+        <point x="135" y="285"></point>
+        <point x="135" y="210"></point>
+        <point x="90" y="210"></point>
+      </polygon>
+    </shape>
+  </turtleShapes>
+  <linkShapes>
+    <shape name="default" curviness="0.0">
+      <lines>
+        <line x="-0.2" visible="false">
+          <dash value="0.0"></dash>
+          <dash value="1.0"></dash>
+        </line>
+        <line x="0.0" visible="true">
+          <dash value="1.0"></dash>
+          <dash value="0.0"></dash>
+        </line>
+        <line x="0.2" visible="false">
+          <dash value="0.0"></dash>
+          <dash value="1.0"></dash>
+        </line>
+      </lines>
+      <indicator>
+        <shape name="link direction" rotatable="true" editableColorIndex="0">
+          <line endX="90" startY="150" marked="true" color="-1920102913" endY="180" startX="150"></line>
+          <line endX="210" startY="150" marked="true" color="-1920102913" endY="180" startX="150"></line>
+        </shape>
+      </indicator>
+    </shape>
+  </linkShapes>
+  <previewCommands>setup repeat 75 [ go ]</previewCommands>
+</model>

@@ -1,16 +1,23 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "name": "Climate Stress Test — Brazil 2026–2030",
-  "version": "2.0",
+  "name": "Climate Stress Test - Brazil 2026-2030",
+  "version": "2.4.0",
   "description": "Exploratory Agent-Based Model implemented in NetLogo to investigate systemic vulnerability and cascading interactions among synthetic municipalities under interacting climate, environmental, infrastructural, socioeconomic, and network-related stressors.",
+  "datePublished": "2026-09-16",
   "codeRepository": "https://github.com/chavatte/climate-stress-test",
   "url": "https://chavatte.vercel.app/projects/climate-stress-test",
   "programmingLanguage": "NetLogo",
+  "runtimePlatform": "NetLogo 7.x",
+  "applicationCategory": "Computer Simulation / Agent-Based Modeling",
   "author": {
     "@type": "Person",
     "givenName": "João Carlos",
-    "familyName": "Chavatte"
+    "familyName": "Chavatte",
+    "affiliation": {
+      "@type": "Organization",
+      "name": "Independent Researcher"
+    }
   },
   "license": "https://opensource.org/licenses/MIT",
   "keywords": [

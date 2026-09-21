@@ -1,13 +1,14 @@
 cff-version: 1.2.0
 message: "If you use this model, please cite the software release."
-title: "Climate Stress Test — Brazil 2026–2030"
-version: "2.0"
+title: "Climate Stress Test - Brazil 2026-2030"
+version: "2.4.0"
 type: software
 authors:
   - family-names: Chavatte
     given-names: João Carlos
     affiliation: "Independent Researcher"
-date-released: 2026-09-16
+    orcid: "https://orcid.org/0009-0001-8432-4349"
+date-released: "2026-09-16"
 abstract: >
   Exploratory Agent-Based Model implemented in NetLogo to investigate
   systemic vulnerability and cascading interactions among synthetic

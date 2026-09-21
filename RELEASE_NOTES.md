@@ -1,28 +1,38 @@
-# Version 2.0 Release Notes
+# Version 2.4.0 Release Notes
 
-## Reproducibility
+## Overview
 
-- Added deterministic random-seed initialization.
-- Added repeated replication support through `replication-test N`.
+Version 2.4.0 introduces enhancements to simulation determinism, numerical dynamics, intersectoral cascade modeling, and diagnostic metrics. This release formally frames the model as an **exploratory stress-testing artifact** for scenario analysis, rather than a predictive climate forecasting tool.
 
-## Numerical behavior
+## Reproducibility & Testing
 
-- Reduced hazard saturation.
-- Reduced seasonality amplitude.
-- Reduced artificial temporal growth.
-- Narrowed synthetic initial distributions.
-- Reduced monthly adaptation and infrastructure gains.
-- Made recovery more gradual.
-- Added cascade memory with decay.
-- Slightly increased cascade thresholds.
+- **Deterministic Initialization:** Added explicit `random-seed` initialization to guarantee fully reproducible simulation runs under identical initial parameter configurations.
+    
+- **Multi-Run Replication Support:** Introduced the `replication-test N` execution procedure to automate repeated Monte Carlo runs across sequential seeds for stochastic sensitivity analysis.
+    
 
-## Metrics
+## Numerical Behavior & Dynamic Calibration
 
-- Added peak systemic-risk tracking.
-- Added peak-damage tracking.
-- Added replication summaries.
+- **Hazard Tuning:** Reduced hazard saturation, dampened seasonality amplitude, and lowered artificial temporal growth rates to prevent premature clipping.
+    
+- **Initial Distribution Control:** Narrowed synthetic baseline distributions across municipal attributes to eliminate initialization outliers.
+    
+- **Adaptation & Infrastructure Adjustment:** Moderated monthly adaptation and infrastructure gain rates to reflect realistic long-term capacity building.
+    
+- **Gradual Recovery Mechanics:** Recalibrated municipal damage recovery coefficients to enforce a more gradual, realistic restoration curve.
+    
+- **Cascade Memory & Thresholds:** Integrated exponential decay into cascade load calculations to simulate memory attenuation over time, paired with elevated intersectoral trigger thresholds to reduce false-positive propagation.
+    
 
-## Scientific positioning
+## Metrics & Diagnostics
 
-Version 2.0 explicitly frames the model as an exploratory stress-testing artifact rather than a predictive climate model.
+- **Peak Systemic Risk Tracking:** Added real-time tracking and interface monitors for maximum systemic risk (`peak-system-risk`).
+    
+- **Peak Damage Tracking:** Added tracking for peak average municipal damage (`peak-average-damage`) across the execution timeline.
+    
+- **Replication Summaries:** Implemented aggregated output reporting and summary statistics for multi-run replication suites.
+    
 
+## Scientific Positioning
+
+- **Exploratory Scope:** Formally designated as a scenario-based stress-testing framework to evaluate relative systemic vulnerabilities, rather than a predictive or deterministic climate forecast model.

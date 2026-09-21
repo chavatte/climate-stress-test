@@ -8,7 +8,7 @@ Use the following values when creating the Zenodo record.
 
 ## Version
 
-**2.0**
+**2.4.0**
 
 ## Resource type
 
@@ -16,7 +16,7 @@ Use the following values when creating the Zenodo record.
 
 ## Creator
 
-**João Carlos Chavatte**
+**João Carlos Chavatte** (Independent Researcher)
 
 ## Description
 
@@ -24,7 +24,7 @@ Climate Stress Test — Brazil 2026–2030 is an exploratory Agent-Based Model (
 
 The model is a computational stress-testing framework, not an official climate forecast. Municipalities are synthetic agents, dependencies are abstract, and model parameters are not empirically calibrated to Brazil's actual municipalities, infrastructure networks, socioeconomic indicators, or observed climate trajectories.
 
-Version 2.0 introduces reproducible random-seed initialization, reduced hazard saturation, moderated seasonality and temporal growth, narrower synthetic initial distributions, reduced monthly adaptation and infrastructure gains, more gradual recovery, cascade memory with decay, slightly higher cascade thresholds, peak systemic-risk and peak-damage tracking, and a replication-test procedure.
+Version 2.4.0 introduces reproducible random-seed initialization, automated multi-scenario comparison (`compare-scenarios`), real-time calculation of realized network topology metrics (edge count, mean degree, realized density), reduced hazard saturation, moderated seasonality and temporal growth, narrower synthetic initial distributions, reduced monthly adaptation and infrastructure gains, more gradual recovery, cascade memory with exponential decay, higher cascade thresholds, peak systemic-risk and peak-damage tracking, and an automated multi-run replication procedure (`replication-test`).
 
 The model uses a five-year experimental horizon from 2026 to 2030, with one tick representing one month. A baseline configuration contains 100 synthetic municipalities.
 
@@ -59,13 +59,17 @@ Recommended documentation license: **Creative Commons Attribution 4.0 Internatio
 
 ## Related identifiers
 
+GitHub Repository:
+
+https://github.com/chavatte/climate-stress-test
+
 Project portfolio:
 
 https://chavatte.vercel.app/projects/climate-stress-test
 
 Interactive simulation:
 
-https://chavatte.vercel.app/html-projects/climate_stress_test/index.html
+https://chavatte.vercel.app/html-projects/climate_stress_test/us/index.html
 
 Blog series:
 
@@ -81,6 +85,5 @@ https://chavatte.web1337.net/iauniverse/?p=928
 Part 4 — Beyond the Sensationalism: Climate in 10 Minutes  
 https://chavatte.web1337.net/iauniverse/?p=934
 
-Part 5 — Beyond the Sensationalism: Climate Stress Test
+Part 5 — Beyond the Sensationalism: Climate Stress Test  
 https://chavatte.web1337.net/iauniverse/?p=949
-

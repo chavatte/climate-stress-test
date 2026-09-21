@@ -25,18 +25,20 @@ _____________|','   ///_/-------------/   |                 \_/_________________
 
 # CLIMATE STRESS TEST
 
+**Languages:** 🇺🇸 **English** · 🇧🇷 [Português](README.pt-BR.md) 
+
 ## Brazil 2026–2030
 
 ### Agent-Based Model for Exploratory Climate Risk Stress Testing
 
-> **Version 2.0 — Reproducibility and Numerical Verification**
+> **Version 2.4.0 — Reproducibility and Numerical Verification**
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22836683.svg)](https://doi.org/10.5281/zenodo.22836683)  
 [![NetLogo](https://img.shields.io/badge/NetLogo-7.x-4E9F3D.svg)](https://ccl.northwestern.edu/netlogo/)  
-[![Model](https://img.shields.io/badge/Model-Agent--Based%20Model-2563EB.svg)](https://github.com/chavatte/climate-stress-test)  
-[![Version](https://img.shields.io/badge/version-2.0-0f172a.svg)](https://doi.org/10.5281/zenodo.22836683)  
+![Model](https://img.shields.io/badge/Model-Agent--Based%20Model-2563EB.svg)  
+![Version](https://img.shields.io/badge/version-2.4.0-0f172a.svg)  
 [![Research](https://img.shields.io/badge/Research-Exploratory-7C3AED.svg)](https://chavatte.vercel.app/projects/climate-stress-test)  
-[![Reproducibility](https://img.shields.io/badge/Reproducibility-Seed%20%2B%20Replications-059669.svg)](#9-reproducibility)
+![Reproducibility](https://img.shields.io/badge/Reproducibility-Seed%20%2B%20Replications-059669.svg)
 
 ---
 
@@ -51,7 +53,7 @@ _____________|','   ///_/-------------/   |                 \_/_________________
 **Platform:** NetLogo 7.x  
 **Model Type:** Exploratory Agent-Based Model (ABM)  
 **Domain:** Climate Risk · Systemic Risk · Complex Networks · Resilience  
-**Version:** 2.0
+**Version:** 2.4.0
 
 ---
 
@@ -74,13 +76,11 @@ The model is explicitly designed as a **computational stress-testing framework**
 The simulation covers a five-year experimental horizon.
 
 ```text
-1 tick  = 1 month
+1 tick   = 1 month
 60 ticks = 5 years
 ```
 
 The 2026–2030 period represents the experimental scenario horizon and should not be interpreted as a prediction of actual Brazilian conditions during those years.
-
----
 
 ## AGENTS
 
@@ -132,8 +132,6 @@ Each municipality is represented as an autonomous agent with heterogeneous chara
 
 The municipalities are **synthetic entities** and do not correspond to specific real-world Brazilian municipalities.
 
----
-
 ## TIME STEP
 
 **1 tick = 1 month**
@@ -144,7 +142,9 @@ Each tick represents the interaction between environmental pressure, local vulne
 
 The conceptual process order is:
 
-```text
+Plaintext
+
+```
 Configure Scenario
        ↓
 Update Local Hazard
@@ -164,8 +164,6 @@ Calculate Aggregate Metrics
 Update Visual State
 ```
 
----
-
 # Quick Start
 
 ## 1. Install NetLogo
@@ -178,33 +176,34 @@ The model was designed for the NetLogo 7.x environment.
 
 Clone this repository or download the repository as a ZIP archive.
 
-```bash
+Bash
+
+```
 git clone https://github.com/chavatte/climate-stress-test.git
 cd climate-stress-test
 ```
 
-Then open the model file located in:
+Then open the model file located in `model/`:
 
-```text
-model/
+Plaintext
+
 ```
-
-The model file should have the `.nlogox` extension.
-
-> **Note:** The exact repository URL and released `.nlogox` filename should be used here after the archival repository is finalized.
+model/[Version_2_4-EN]_Climate_stress_Test_(Brasil-2026-2030).nlogox
+model/[Version_2_4-PT-BR]_Climate_stress_Test_(Brasil-2026-2030).nlogox
+```
 
 ## 3. Open the model in NetLogo
 
 Launch NetLogo and open the Climate Stress Test `.nlogox` model.
 
-The main interface provides the scenario controls, simulation controls, monitors, plots, and model outputs.
+The main interface provides scenario controls, simulation controls, monitors, plots, and console outputs.
 
 ## 4. Run the baseline experiment
 
 Start with the baseline parameters:
 
-|Variable|Value|
-|---|--:|
+|**Variable**|**Value**|
+|---|---|
 |Municipalities|100|
 |Warming pressure|60|
 |El Niño intensity|55|
@@ -217,13 +216,17 @@ Start with the baseline parameters:
 
 Then execute:
 
-```text
+Plaintext
+
+```
 setup
 ```
 
 followed by:
 
-```text
+Plaintext
+
+```
 go
 ```
 
@@ -231,7 +234,9 @@ Each tick represents one simulated month.
 
 To run the complete experimental horizon automatically, use:
 
-```text
+Plaintext
+
+```
 run-to-2030
 ```
 
@@ -239,17 +244,21 @@ This advances the model through the 60-month experimental horizon.
 
 ## 5. Compare scenarios
 
-The model provides three principal experimental configurations:
+The model provides three principal experimental configurations (`FAIL OPEN`, `BALANCED`, and `RESILIENT BY DESIGN`).
 
-```text
-scenario-fail-open
-scenario-balanced
-scenario-resilient
+To compare all three scenarios automatically under identical initial conditions (same seed and network structure), click **COMPARE SCENARIOS** or run:
+
+Plaintext
+
+```
+compare-scenarios
 ```
 
-A typical exploratory workflow is:
+Alternatively, run individual scenarios manually:
 
-```text
+Plaintext
+
+```
 setup
 ↓
 scenario-balanced
@@ -259,15 +268,15 @@ run-to-2030
 print-summary
 ```
 
-Repeat the workflow for the other scenarios and record the resulting metrics.
-
 > Scenario names describe model configurations. They do not represent forecasts of actual Brazilian policy or future conditions.
 
 ## 6. Reproduce the baseline run
 
-Version 2.0 uses:
+Version 2.4.0 uses:
 
-```text
+Plaintext
+
+```
 random-seed 20260916
 ```
 
@@ -290,40 +299,47 @@ This makes an individual simulation trajectory reproducible.
 
 For exploratory statistical analysis, use:
 
-```text
+Plaintext
+
+```
 replication-test 30
 ```
 
-The procedure executes 30 stochastic replications with different seeds and reports:
+The procedure executes 30 stochastic replications with independent seeds and reports:
 
-```text
+Plaintext
+
+```
 Seed
 Final Systemic Risk
 Peak Systemic Risk
 Final Average Damage
+Total Cascade Events
+Network Mean Degree
+Network Realized Density
 ```
 
 A fixed seed is useful for reproducibility, while multiple seeds are required to investigate stochastic variability.
-
-For research-grade analysis, store the replication results and calculate appropriate summary statistics and uncertainty measures.
-
----
 
 ## Minimal Workflow
 
 The shortest path to running the model is:
 
-```text
+Plaintext
+
+```
 1. Open the .nlogox file
 2. Run setup
-3. Select a scenario
+3. Select a scenario (or run compare-scenarios)
 4. Run go or run-to-2030
 5. Run print-summary
 ```
 
 For reproducibility testing:
 
-```text
+Plaintext
+
+```
 setup
 run-to-2030
 print-summary
@@ -331,25 +347,21 @@ print-summary
 
 For replication testing:
 
-```text
+Plaintext
+
+```
 replication-test 30
 ```
-
----
 
 ## Interactive Browser Simulation
 
 A browser-based version of the model is also available:
 
-**Web Simulation**
+**Web Simulation:** [Climate Stress Test ![Português](https://flagcdn.com/24x18/br.png)](https://chavatte.vercel.app/html-projects/climate_stress_test/index.html)
 
-[Climate Stress Test](https://chavatte.vercel.app/html-projects/climate_stress_test/index.html)
+**Web Simulation:** [Climate Stress Test ![English](https://flagcdn.com/24x18/us.png)](https://chavatte.vercel.app/html-projects/climate_stress_test/index-EN.html)
 
-The browser version provides an accessible way to interact with the simulation without opening the NetLogo desktop application.
-
-For reproducible research, however, the released NetLogo model and its documented parameters should be treated as the primary research artifact.
-
----
+The browser version provides an accessible way to interact with the simulation without opening the NetLogo desktop application. For research-grade work, the released NetLogo model and its documented parameters should be treated as the primary research artifact.
 
 # 1. Abstract
 
@@ -357,15 +369,11 @@ Climate Stress Test — Brazil 2026–2030 is an exploratory Agent-Based Model i
 
 The model combines heterogeneous municipal exposure, vulnerability, resilience, sectoral sensitivities, adaptation investment, infrastructure resilience, and abstract inter-municipal dependencies.
 
-The objective is not to forecast the future state of Brazil.
+The objective is not to forecast the future state of Brazil. Instead, the model functions as a **computational laboratory for stress testing**: controlled scenarios can be used to examine how changes in resilience, adaptation, network structure, and cascade sensitivity influence simulated systemic risk and damage.
 
-Instead, the model functions as a **computational laboratory for stress testing**: controlled scenarios can be used to examine how changes in resilience, adaptation, network structure, and cascade sensitivity influence simulated systemic risk and damage.
-
-Version 2.0 introduces explicit reproducibility mechanisms, including a fixed random seed and repeated stochastic replication testing.
+Version 2.4.0 introduces explicit reproducibility mechanisms (fixed seed), automated multi-scenario comparison (`compare-scenarios`), graph density diagnostics, and repeated stochastic replication testing (`replication-test`).
 
 > **Scientific scope:** The model is synthetic and exploratory. Its outputs should be interpreted as stress-test trajectories and hypothesis-exploration results rather than empirical forecasts.
-
----
 
 # 2. Research Question
 
@@ -395,13 +403,7 @@ Under what modeled conditions can local stress propagate through dependencies an
 
 How does combined resilience, infrastructure capacity, and adaptation affect recovery dynamics?
 
-These questions are exploratory. The model does not claim that its synthetic mechanisms reproduce the behavior of real Brazilian systems.
-
----
-
 # 3. Model Objectives
-
-The model has five primary objectives.
 
 ### 3.1 Explore systemic vulnerability
 
@@ -417,19 +419,17 @@ Explore the relationship between resilience, infrastructure, adaptation, damage,
 
 ### 3.4 Support reproducible experimentation
 
-Provide deterministic seed control and repeated stochastic simulations.
+Provide deterministic seed control, automated scenario comparisons, and repeated stochastic simulations.
 
 ### 3.5 Provide an extensible research framework
 
 Create a computational foundation that can eventually incorporate empirical climate, geographic, infrastructure, and socioeconomic datasets.
 
----
-
 # 4. Conceptual Framework
 
-The model conceptualizes systemic risk as an emergent property of interacting local and network processes.
+Plaintext
 
-```text
+```
                  CLIMATE / ENVIRONMENTAL PRESSURE
                               │
                               ▼
@@ -473,24 +473,7 @@ The model conceptualizes systemic risk as an emergent property of interacting lo
                     Damage / Recovery
 ```
 
-The framework combines concepts from:
-
-- Agent-Based Modeling;
-    
-- Complex Networks;
-    
-- Climate Risk Stress Testing;
-    
-- Cascading Failures;
-    
-- Infrastructure Resilience;
-    
-- Adaptation Dynamics;
-    
-- Water–Energy–Food Nexus reasoning.
-    
-
----
+The framework combines concepts from Agent-Based Modeling, Complex Networks, Climate Risk Stress Testing, Cascading Failures, Infrastructure Resilience, Adaptation Dynamics, and Water–Energy–Food Nexus reasoning.
 
 # 5. Agent Architecture
 
@@ -521,26 +504,22 @@ Each municipality contains synthetic sensitivity parameters for:
 - Heat
     
 
-These parameters determine how generalized hazard pressure translates into sector-specific stress.
-
 ## 5.5 Dynamic state
 
 The agent evolves through the simulation as hazard, sector impacts, cascade load, risk, damage, and recovery change over time.
 
 ## 5.6 Visual status
 
-Municipalities can transition between four qualitative visual states:
+Municipalities transition between four qualitative visual states:
 
-```text
+Plaintext
+
+```
 GREEN   → STABLE
 YELLOW  → WARNING
 ORANGE  → HIGH
 RED     → CRITICAL
 ```
-
-These states are internal visualization categories and are not official Brazilian risk classifications.
-
----
 
 # 6. Risk Formulation
 
@@ -548,595 +527,115 @@ These states are internal visualization categories and are not official Brazilia
 
 The model combines four principal pressure components:
 
-|Component|Weight|
-|---|--:|
+|**Component**|**Weight**|
+|---|---|
 |Warming pressure|0.45|
 |El Niño intensity|0.20|
 |Deforestation pressure|0.20|
 |Urban pressure|0.15|
 
-Seasonality is modeled with an approximate amplitude of ±10%.
+Seasonality is modeled with an approximate amplitude of ±10%. A temporal drift of ~1.2%/year is applied.
 
-A small imposed temporal growth component is also used as an experimental trend.
-
-Version 2.0 reduces hazard saturation and moderates temporal amplification relative to the earlier internal formulation.
-
----
+Version 2.4.0 reduces hazard saturation and moderates temporal amplification relative to earlier internal formulations.
 
 ## 6.2 Raw Local Risk
 
-The fundamental raw-risk formulation is:
+Plaintext
 
-```text
+```
 RawRisk = Hazard × Exposure × Vulnerability / 10000
 ```
 
-The resulting value is then modified by protective mechanisms.
-
----
-
 ## 6.3 Net Risk
 
-Net local risk is reduced by:
+Net local risk is reduced by resilience, effective infrastructure, and effective adaptation:
 
-- resilience;
-    
-- effective infrastructure;
-    
-- effective adaptation.
-    
+Plaintext
 
-Conceptually:
-
-```text
-Net Risk
-    =
-Raw Risk
-    -
-Resilience Effect
-    -
-Infrastructure Effect
-    -
-Adaptation Effect
+```
+Net Risk = Raw Risk − Resilience Effect − Infrastructure Effect − Adaptation Effect
 ```
 
-All variables are normalized model constructs.
+## 6.4 Damage & Recovery
 
-They should **not** be interpreted as directly measured real-world quantities.
+Damage incorporates local risk, economic impact, and cascade load.
 
----
-
-## 6.4 Damage
-
-Damage incorporates multiple sources of stress, including:
-
-- local risk;
-    
-- economic impact;
-    
-- cascade load.
-    
-
-This allows damage to reflect both direct local stress and network-mediated systemic pressure.
-
----
-
-## 6.5 Recovery
-
-Recovery depends on the combined modeled capacity of:
-
-- resilience;
-    
-- infrastructure;
-    
-- adaptation.
-    
-
-Version 2.0 introduces more gradual recovery dynamics.
-
----
+Recovery depends on the combined capacity of resilience, infrastructure, and adaptation. Version 2.4.0 uses a gradual recovery rate (0.020/month).
 
 # 7. Cascade Mechanism
 
-One of the central features of the model is the representation of cascading effects.
+Municipalities are connected through an abstract dependency network (`dependencies`).
 
-Municipalities are connected through:
-
-```text
-dependencies
-```
-
-These dependencies represent **abstract inter-municipal relationships**.
-
-They do not represent:
-
-- the real Brazilian electricity grid;
-    
-- real water distribution networks;
-    
-- actual supply chains;
-    
-- real transportation networks;
-    
-- real financial networks;
-    
-- observed trade flows.
-    
-
-Cascade pressure depends primarily on:
-
-- neighboring risk;
-    
-- network density;
-    
-- cascade sensitivity.
-    
-
-Conceptually:
-
-```text
-Neighbor Risk
-      │
-      ▼
-Network Connectivity
-      │
-      ▼
-Cascade Pressure
-      │
-      ▼
-Cascade Load
-      │
-      ▼
-Additional Systemic Stress
-```
+Cascade pressure depends on neighboring risk, network connectivity, and cascade sensitivity.
 
 ### Cascade memory
 
-Version 2.0 introduces memory into the cascade mechanism.
-
-Previous cascade load contributes to subsequent states and gradually decays.
-
-This prevents every simulation tick from behaving as a completely independent event and allows persistent network stress to emerge.
-
----
+Version 2.4.0 maintains persistent cascade load memory that decays exponentially by 8% per month (`cascade-load * 0.92`) before incorporating new spillover.
 
 # 8. Scenarios
 
-The model contains three principal experimental scenarios.
-
 ## 8.1 Fail-Open
 
-Adaptation and infrastructure efficiency:
-
-```text
-≈ 55%
-```
-
-This represents an experimental low-protection configuration.
-
----
+Adaptation and infrastructure efficiency: **55%** (low protection).
 
 ## 8.2 Balanced
 
-Nominal efficiency:
-
-```text
-≈ 100%
-```
-
-This represents the baseline protective configuration.
-
----
+Nominal efficiency: **100%** (baseline protection).
 
 ## 8.3 Resilient
 
-Efficiency:
+Efficiency: **up to 130%** (high protection).
 
-```text
-up to ≈ 130%
+# 9. Reproducibility & Multi-Run Analysis
+
+`setup` uses:
+
+Plaintext
+
 ```
-
-This represents an experimental high-resilience configuration.
-
-> These scenarios are parameterized experiments. They are not predictions of actual Brazilian policy outcomes.
-
----
-
-# 9. Reproducibility
-
-Reproducibility is a specific design objective of Version 2.0.
-
-The `setup` procedure initializes the model using:
-
-```text
 random-seed 20260916
 ```
 
-Using:
+For statistical evaluation, `replication-test N` runs $N$ independent iterations across sequential seeds and reports key indicators to the console.
 
-- the same model version;
+# 10. Limitations
+
+- **Synthetic Municipalities:** Agents do not correspond to real Brazilian municipalities.
     
-- the same parameter values;
+- **Abstract Topology:** Grid placement and dependencies are stylized.
     
-- the same random seed;
-    
-- the same compatible NetLogo version;
-    
-
-should reproduce the same stochastic sequence.
-
----
-
-## Replication Testing
-
-The model provides:
-
-```text
-replication-test N
-```
-
-This procedure executes multiple stochastic simulations using different seeds.
-
-The procedure reports:
-
-```text
-Seed
-Final Systemic Risk
-Peak Systemic Risk
-Final Average Damage
-```
-
-### Important statistical distinction
-
-A fixed seed provides reproducibility of a specific simulation trajectory.
-
-It does **not** provide statistical evidence.
-
-For robust analysis, multiple independent replications should be performed.
-
-Recommended outputs include:
-
-- mean;
-    
-- median;
-    
-- standard deviation;
-    
-- minimum;
-    
-- maximum;
-    
-- uncertainty intervals;
-    
-- distribution plots.
+- **Uncalibrated Parameters:** Inputs represent normalized scales (0–100), not absolute physical units.
     
 
----
+> **Scientific interpretation:** The model should be interpreted as a stress-testing and hypothesis-exploration framework, not as an official climate forecast for Brazil.
 
-# 10. Experiments
+# 11. Citation
 
-The baseline configuration is:
+If you use, modify, analyze, or build upon this model, please cite the corresponding software release:
 
-|Variable|Value|
-|---|--:|
-|Municipalities|100|
-|Warming pressure|60|
-|El Niño intensity|55|
-|Deforestation pressure|35|
-|Urban pressure|55|
-|Adaptation investment|35|
-|Infrastructure resilience|45|
-|Network density|6|
-|Cascade sensitivity|40|
-
-All values from 0–100 are normalized experimental scales.
-
-They are **not**:
-
-- degrees Celsius;
-    
-- percentages of Brazilian territory;
-    
-- official climate indices;
-    
-- observed municipal indicators;
-    
-- probabilities.
-    
-
----
-
-## Recommended Experimental Protocol
-
-For formal experimentation:
-
-1. Select the scenario.
-    
-2. Record all model parameters.
-    
-3. Record the NetLogo version.
-    
-4. Record the model version.
-    
-5. Assign a unique random seed.
-    
-6. Execute the simulation.
-    
-7. Record final and peak systemic risk.
-    
-8. Record final average damage.
-    
-9. Repeat for multiple independent seeds.
-    
-10. Compare distributions rather than individual trajectories.
-    
-
-A minimum of 30 replications is recommended for exploratory statistical analysis.
-
-For stronger studies, larger replication sets and sensitivity analysis should be considered.
-
----
-
-# 11. Limitations
-
-The current model contains several deliberate abstractions.
-
-### Synthetic municipalities
-
-Agents do not correspond to actual Brazilian municipalities.
-
-### Abstract spatialization
-
-The 2D environment is a conceptual spatial representation rather than geographic GIS data.
-
-### Synthetic network
-
-The dependency network is generated as an abstract network rather than derived from observed infrastructure or economic relationships.
-
-### Artificial sensitivities
-
-Sector-specific sensitivities are modeled parameters rather than empirically estimated municipal indicators.
-
-### Non-calibrated parameters
-
-The current parameter set has not been calibrated against observed Brazilian climate, socioeconomic, hydrological, infrastructure, or disaster data.
-
-### Normalized hazard
-
-Hazard variables operate on normalized model scales.
-
-### Simplified adaptation
-
-Adaptation and infrastructure effects are represented through simplified efficiency mechanisms.
-
-### Simplified recovery
-
-Recovery dynamics are intentionally abstract.
-
----
-
-## Scientific interpretation
-
-Because of these limitations:
-
-> **The model should be interpreted as a stress-testing and hypothesis-exploration framework, not as a climate forecast for Brazil.**
-
-The use of "Brazil 2026–2030" identifies the conceptual scenario and research context. It does not imply empirical representation of Brazil's actual municipalities or future conditions.
-
----
-
-# 12. Future Work
-
-A potential Version 3.x research direction includes progressively replacing synthetic components with empirical data.
-
-### Geographic representation
-
-- Real Brazilian municipal boundaries
-    
-- GIS integration
-    
-- Regional spatial calibration
-    
-
-### Climate data
-
-- Historical temperature series
-    
-- Precipitation
-    
-- Drought indicators
-    
-- Hydrological observations
-    
-- Observed El Niño-related variables
-    
-
-### Infrastructure
-
-- Observed electricity networks
-    
-- Water infrastructure
-    
-- Transportation dependencies
-    
-- Supply-chain relationships
-    
-
-### Socioeconomic data
-
-- Population
-    
-- Economic indicators
-    
-- Agricultural exposure
-    
-- Urbanization
-    
-- Infrastructure indicators
-    
-
-### Statistical experimentation
-
-- Monte Carlo experiments
-    
-- Large replication sets
-    
-- Sensitivity analysis
-    
-- Uncertainty intervals
-    
-- Parameter distributions
-    
-
-### Validation
-
-- Historical-event comparison
-    
-- Calibration
-    
-- Error metrics
-    
-- Fit metrics
-    
-- Out-of-sample validation
-    
-
-### Data pipeline
-
-- CSV export
-    
-- Structured experiment metadata
-    
-- Automated experiment execution
-    
-- Reproducible analysis scripts
-    
-
-The transition from Version 2.x to Version 3.x should therefore be understood as a transition from a **synthetic exploratory model** toward an **empirically informed simulation framework**.
-
----
-
-# 13. Citation
-
-If you use, modify, analyze, or build upon this model, please cite the corresponding software release.
-
-### Software citation
-
-**Chavatte, João Carlos. (2026). _Climate Stress Test — Brazil 2026–2030: An Exploratory Agent-Based Model for Systemic Climate Risk Stress Testing_. Version 2.0. Zenodo.**
+**Chavatte, João Carlos. (2026). _Climate Stress Test — Brazil 2026–2030: An Exploratory Agent-Based Model for Systemic Climate Risk Stress Testing_. Version 2.4.0. Zenodo.**
 
 **DOI:** 10.5281/zenodo.22836683
 
-### Citation file
+A machine-readable citation record is provided in `CITATION.cff`.
 
-A machine-readable citation record is provided in:
+# 12. License
 
-```text
-CITATION.cff
-```
-
-### Research artifact
-
-The Zenodo record should be treated as the archival reference for the specific released version.
-
----
-
-# 14. License
-
-## Software
-
-The model source code is released under the:
-
-**MIT License**
-
-See:
-
-```text
-LICENSE
-```
-
-## Documentation
-
-The documentation is released under:
-
-**Creative Commons Attribution 4.0 International (CC BY 4.0)**
-
-See:
-
-```text
-LICENSE-DOCS
-```
-
----
-
-# Related Resources
-
-### Interactive Browser Simulation
-
-[Web Simulation](https://chavatte.vercel.app/html-projects/climate_stress_test/index.html)
-
-### Portfolio Project
-
-[Project - Climate Stress Test](https://chavatte.vercel.app/projects/climate-stress-test)
-
-### Research Documentation
-
-See the `documentation/` directory for:
-
-```text
-MODEL_CARD.md
-METHODOLOGY.md
-ODD_SUMMARY.md
-REPLICATION_PROTOCOL.md
-```
-
----
-
-# Research Context
-
-This model is the computational component of a broader analytical series exploring climate risk, environmental degradation, systemic vulnerability, and adaptation in Brazil.
-
-The conceptual development was preceded by a four-part article series:
-
-### Part 1
-
-**[A Skeptical Analysis of the “Super El Niño” and Anthropogenic Degradation](https://chavatte.web1337.net/iauniverse/?p=863)**
-
-### Part 2
-
-**[The Climate System Forecast for Brazil (2026–2030)](https://chavatte.web1337.net/iauniverse/?p=879)**
-
-### Part 3
-
-**[The Stress Test — Brazil 2030 Between Collapse and Adaptation](https://chavatte.web1337.net/iauniverse/?p=928)**
-
-### Part 4
-
-**[Climate in 10 Minutes](https://chavatte.web1337.net/iauniverse/?p=934)**
-
-### Part 5
-
-**[Climate Stress Test](https://chavatte.web1337.net/iauniverse/?p=949)**
-
----
-
-# Methodological References
-
-Grimm, V., Berger, U., DeAngelis, D. L., Polhill, J. G., Giske, J., & Railsback, S. F. (2010). The ODD protocol: A review and first update. _Ecological Modelling, 221_(23), 2760–2768.
-
-Grimm, V., et al. (2020). The ODD protocol for describing agent-based and other simulation models: A second update to improve clarity, replication, and structural realism. _Journal of Artificial Societies and Social Simulation, 23_(2), 7. [https://doi.org/10.18564/jasss.4259](https://doi.org/10.18564/jasss.4259)
-
-Wilensky, U. (1999). _NetLogo_. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
-
----
+- **Code:** MIT License (`LICENSE`)
+    
+- **Documentation:** Creative Commons Attribution 4.0 International (`LICENSE-DOCS`)
+    
 
 # Status
 
-```text
+Plaintext
+
+```
 ╔══════════════════════════════════════════════════════╗
 ║  CLIMATE STRESS TEST                                 ║
 ║  BRAZIL 2026–2030                                    ║
 ║                                                      ║
-║  VERSION        : 2.0                                ║
+║  VERSION        : 2.4.0                              ║
 ║  MODEL          : AGENT-BASED                        ║
 ║  PLATFORM       : NETLOGO                            ║
 ║  HORIZON        : 60 MONTHS                          ║

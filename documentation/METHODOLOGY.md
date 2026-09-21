@@ -25,7 +25,7 @@ The experimental horizon is 60 ticks, representing a five-year period from 2026 
 
 The spatial environment is a two-dimensional abstract grid containing five stylized regional bands. The spatial arrangement is a modeling device and should not be interpreted as geographic cartography.
 
-## 3. Agents
+## 3. Agents and Network Structure
 
 The model contains a baseline of 100 synthetic municipal agents.
 
@@ -40,6 +40,13 @@ The principal sensitivities are:
 
 Dynamic variables include hazard, water stress, agricultural impact, energy stress, economic impact, cascade load, local risk, damage, recovery capacity, and status.
 
+### Network Structural Metrics
+Municipal agents are connected via an undirected dependency network (`dependencies`). While user input controls the target connection parameter (`network-density`), actual structural metrics are measured post-generation:
+
+- `network-edge-count`: Total number of undirected links $E$.
+- `network-mean-degree`: Average degree across $N$ agents ($2E / N$).
+- `network-realized-density`: Observed graph density ($E / [N(N-1)/2]$).
+
 ## 4. Hazard formulation
 
 The model combines four normalized pressure components:
@@ -49,7 +56,7 @@ The model combines four normalized pressure components:
 - deforestation pressure;
 - urban pressure.
 
-The Version 2 formulation uses the following conceptual weights:
+The Version 2.4.0 formulation uses the following conceptual weights:
 
 ```text
 Warming pressure       0.45
@@ -58,15 +65,17 @@ Deforestation pressure 0.20
 Urban pressure         0.15
 ```
 
-Seasonality is applied with an approximate ±10% amplitude, together with a small imposed temporal growth term used as an experimental trend.
+Seasonality is applied with an approximate ±10% amplitude, together with a small monthly temporal drift term (~1.2% annual rate, or 0.012/month) used as an experimental trend.
 
-Version 2.0 deliberately reduces hazard saturation and moderates temporal amplification relative to the earlier internal formulation.
+Version 2.4.0 deliberately reduces hazard saturation and moderates temporal amplification relative to earlier internal formulations.
 
 ## 5. Local risk
 
 The raw local-risk construct is:
 
-```text
+Plaintext
+
+```
 RawRisk = Hazard × Exposure × Vulnerability / 10000
 ```
 
@@ -81,10 +90,13 @@ Municipalities are connected through `dependencies`.
 Cascade pressure is influenced by:
 
 - average neighboring risk;
+    
 - network density;
+    
 - cascade sensitivity.
+    
 
-The cascade load has memory: previous cascade load contributes to current load and then decays over time.
+The cascade load has persistent memory: previous cascade load decays exponentially by 8% per month (`cascade-load * 0.92`) before new spillover is incorporated.
 
 This mechanism allows the model to represent persistence and propagation rather than treating every tick as an independent event.
 
@@ -92,11 +104,11 @@ This mechanism allows the model to represent persistence and propagation rather 
 
 Damage combines local risk, economic impact, and cascade load.
 
-Recovery depends on the combined capacity represented by resilience, infrastructure, and adaptation.
+Recovery depends on the combined capacity represented by resilience, infrastructure, and adaptation, operating at a gradual recovery rate coefficient of 0.020 per tick.
 
-Version 2.0 uses more gradual recovery to reduce artificial oscillations and make the recovery process less abrupt.
+Version 2.4.0 uses gradual recovery to reduce artificial oscillations and make the recovery process less abrupt.
 
-## 8. Scenario controls
+## 8. Scenario controls and comparison
 
 ### Fail-open
 
@@ -104,11 +116,15 @@ Adaptation and infrastructure efficiency are reduced to approximately 55%.
 
 ### Balanced
 
-Nominal efficiency is used.
+Nominal efficiency is used (100%).
 
-### Resilient
+### Resilient by design
 
 Efficiency may reach up to approximately 130%.
+
+### Automated Scenario Comparison
+
+The `compare-scenarios` procedure executes all three scenarios sequentially under identical initial conditions (same seed `20260916`, same municipal count, and same network topology) over the 60-month horizon to provide direct comparative diagnostic outputs.
 
 These scenarios are experimental parameterizations, not forecasts of real policy outcomes.
 
@@ -116,28 +132,40 @@ These scenarios are experimental parameterizations, not forecasts of real policy
 
 `setup` uses:
 
-```text
+Plaintext
+
+```
 random-seed 20260916
 ```
 
 The same model version, parameters, and compatible NetLogo version should reproduce the same stochastic sequence.
 
-For statistical analysis, `replication-test N` uses multiple seeds.
+For statistical analysis, `replication-test N` executes $N$ independent runs with sequential seeds, printing final systemic risk, peak systemic risk, average damage, cascade event counts, mean degree, and realized density.
 
 ## 10. Recommended experimental protocol
 
 For a formal experiment:
 
 1. document the exact NetLogo version;
+    
 2. record the model version;
+    
 3. record all parameter values;
+    
 4. run at least 30 independent replications per scenario;
+    
 5. preserve the random seeds;
+    
 6. export raw outputs;
+    
 7. calculate mean, median, standard deviation, minimum, maximum, and uncertainty intervals;
+    
 8. compare scenarios using pre-specified metrics;
+    
 9. inspect distributions rather than relying only on averages;
+    
 10. report limitations and sensitivity analyses.
+    
 
 ## 11. Interpretation
 
@@ -150,13 +178,22 @@ A change in output means that the modeled assumptions produced a different traje
 The model documentation follows the spirit of the Overview, Design concepts, and Details (ODD) framework:
 
 - purpose and patterns;
+    
 - entities, state variables, and scales;
+    
 - process overview;
+    
 - scheduling;
+    
 - initialization;
+    
 - submodels;
+    
 - design concepts;
+    
 - input data and parameterization;
+    
 - experimental analysis.
+    
 
 The current implementation is an exploratory artifact rather than a fully empirically validated ODD model.
