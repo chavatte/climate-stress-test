@@ -357,9 +357,9 @@ replication-test 30
 
 A browser-based version of the model is also available:
 
-**Web Simulation:** [Climate Stress Test ![Português](https://flagcdn.com/24x18/br.png)](https://chavatte.vercel.app/html-projects/climate_stress_test/index.html)
+**Web Simulation:** [Climate Stress Test ![Português](https://flagcdn.com/24x18/br.png)](https://chavatte.vercel.app/html-projects/climate_stress_test/pt-br/index.html)
 
-**Web Simulation:** [Climate Stress Test ![English](https://flagcdn.com/24x18/us.png)](https://chavatte.vercel.app/html-projects/climate_stress_test/index-EN.html)
+**Web Simulation:** [Climate Stress Test ![English](https://flagcdn.com/24x18/us.png)](https://chavatte.vercel.app/html-projects/climate_stress_test/us/index.html)
 
 The browser version provides an accessible way to interact with the simulation without opening the NetLogo desktop application. For research-grade work, the released NetLogo model and its documented parameters should be treated as the primary research artifact.
 
